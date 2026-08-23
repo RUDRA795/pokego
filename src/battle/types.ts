@@ -34,6 +34,9 @@ export interface RuntimePokemon {
   statusTurns?: number;
   isWild: boolean;
   capturedAt?: number;
+  isShadow?: boolean;
+  isPurified?: boolean;
+  isBuddy?: boolean;
 }
 
 // ==========================================

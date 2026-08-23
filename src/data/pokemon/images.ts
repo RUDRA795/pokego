@@ -1,13 +1,33 @@
 /**
- * Pokémon Game Engine — Official Pokémon Imagery & 3D Render Accessor
+ * Pokémon Game Engine — Official Pokémon Imagery, 3D Models & Animation Accessors
  * 
  * Sourced directly from local high-resolution assets covering all 1,025 canonical Pokémon:
- * - High-Resolution Official Artwork (475x475 PNG)
+ * - Authentic 3D Animated Battle Model Animations (GIF)
+ * - Shiny 3D Animated Battle Model Animations (GIF)
  * - High-Resolution Pokémon HOME 3D Models / Renders (PNG)
+ * - High-Resolution Official Artwork (475x475 PNG)
  * - Pokédex Standard Pixel Icons (PNG)
  */
 
 import { getPokemonById } from './index';
+
+export function getPokemonAnimated(speciesIdOrDex: string | number): string {
+  if (typeof speciesIdOrDex === 'number') {
+    return `/assets/pokemon/animated/${speciesIdOrDex}.gif`;
+  }
+  const species = getPokemonById(speciesIdOrDex);
+  const dex = species?.nationalDexNumber || 25;
+  return `/assets/pokemon/animated/${dex}.gif`;
+}
+
+export function getPokemonAnimatedShiny(speciesIdOrDex: string | number): string {
+  if (typeof speciesIdOrDex === 'number') {
+    return `/assets/pokemon/animated_shiny/${speciesIdOrDex}.gif`;
+  }
+  const species = getPokemonById(speciesIdOrDex);
+  const dex = species?.nationalDexNumber || 25;
+  return `/assets/pokemon/animated_shiny/${dex}.gif`;
+}
 
 export function getPokemonArtwork(speciesIdOrDex: string | number): string {
   if (typeof speciesIdOrDex === 'number') {
@@ -34,8 +54,4 @@ export function getPokemonIcon(speciesIdOrDex: string | number): string {
   const species = getPokemonById(speciesIdOrDex);
   const dex = species?.nationalDexNumber || 25;
   return `/assets/pokemon/icons/${dex}.png`;
-}
-
-export function getPokemonShowdown(speciesId: string): string {
-  return `/assets/pokemon/showdown/${speciesId}.gif`;
 }

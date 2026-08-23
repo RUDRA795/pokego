@@ -4,23 +4,15 @@ import { useGameStore } from '../state/useGameStore';
 
 export function useKeyboardControls() {
   const setInput = usePlayerStore((state) => state.setInput);
-  const setPaused = useGameStore((state) => state.setPaused);
-  const isPaused = useGameStore((state) => state.isPaused);
   const screen = useGameStore((state) => state.screen);
 
   const keysPressed = useRef<{ [key: string]: boolean }>({});
 
   useEffect(() => {
-    if (screen !== 'PLAYING') return;
+    if (screen !== 'MAP') return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't intercept if user is typing in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-
-      if (e.code === 'KeyP' || e.code === 'Escape') {
-        setPaused(!isPaused);
-        return;
-      }
 
       keysPressed.current[e.code] = true;
       updateInputVector();
@@ -43,7 +35,6 @@ export function useKeyboardControls() {
       if (keysPressed.current['KeyW'] || keysPressed.current['ArrowUp']) y += 1;
       if (keysPressed.current['KeyS'] || keysPressed.current['ArrowDown']) y -= 1;
 
-      // Normalize if diagonal
       const len = Math.sqrt(x * x + y * y);
       if (len > 0) {
         x /= len;
@@ -62,5 +53,5 @@ export function useKeyboardControls() {
       keysPressed.current = {};
       setInput({ x: 0, y: 0 });
     };
-  }, [screen, isPaused, setInput, setPaused]);
+  }, [screen, setInput]);
 }
