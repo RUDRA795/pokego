@@ -10,13 +10,17 @@
  */
 
 import React, { useState } from 'react';
-import { Sparkles, Shield, Zap, Flame, Droplets, Leaf, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Sparkles, Shield, Zap, Flame, Droplets, Leaf, ArrowLeft } from 'lucide-react';
 import { RuntimePokemon, BattleState, BattleAction } from '../../battle/types';
 import { BattleEngine } from '../../battle/BattleEngine';
 import { BattleArena3D } from './BattleArena3D';
 import { usePlayerPartyStore } from '../../state/usePlayerPartyStore';
 import { SoundSystem } from '../../systems/audio/SoundSystem';
 import { POKEMON_TYPE_THEMES } from '../../data/pokemon/types';
+import { HealthBar } from '../ui/HealthBar';
+import { PokemonButton } from '../ui/PokemonButton';
+import { PokemonCard } from '../ui/PokemonCard';
+import { RomDialog } from '../ui/RomDialog';
 
 interface PokemonUniteBattleScreenProps {
   wildPokemonInstance: RuntimePokemon;
@@ -142,8 +146,9 @@ export const PokemonUniteBattleScreen: React.FC<PokemonUniteBattleScreenProps> =
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-between select-none overflow-hidden bg-slate-950 font-sans">
-      {/* 3D Battle Scene Layer */}
+    <div className="fixed inset-0 z-50 flex flex-col justify-between select-none overflow-hidden bg-pokemon-dark font-pokemon">
+      <div className="scanlines" />
+      
       <BattleArena3D
         playerPokemon={battleState.playerPokemon}
         opponentPokemon={battleState.opponentPokemon}
@@ -152,70 +157,59 @@ export const PokemonUniteBattleScreen: React.FC<PokemonUniteBattleScreenProps> =
         activeAttackType={activeAttackType}
       />
 
-      {/* TOP UNITE HUD: Opponent & Player Stadium Cards */}
       <header className="relative z-10 p-4 flex justify-between items-start pointer-events-auto">
-        {/* Opponent Card (Top-Left) */}
-        <div className="bg-slate-900/90 backdrop-blur-md border border-white/15 p-3 rounded-2xl shadow-2xl w-56 space-y-1.5 animate-in slide-in-from-top-2">
+        <PokemonCard className="w-56 space-y-2">
           <div className="flex justify-between items-center">
-            <span className="font-extrabold text-xs text-white uppercase tracking-wider">{battleState.opponentPokemon.name}</span>
-            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-white/10">
+            <span className="font-extrabold text-xs text-pokemon-ui-text uppercase tracking-wider">{battleState.opponentPokemon.name}</span>
+            <span className="text-[10px] font-black px-2 py-0.5 rounded bg-pokemon-ui-card text-pokemon-ui-text border border-pokemon-ui-border">
               Lv. {battleState.opponentPokemon.level}
             </span>
           </div>
-          {/* Opponent HP Bar */}
-          <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden border border-white/10">
-            <div
-              className={`h-full rounded-full transition-all duration-300 ${opponentHpPercent > 50 ? 'bg-emerald-400' : opponentHpPercent > 20 ? 'bg-amber-400' : 'bg-rose-500'}`}
-              style={{ width: `${opponentHpPercent}%` }}
-            />
-          </div>
-        </div>
+          <HealthBar current={opponentHp} max={opponentMaxHp} />
+        </PokemonCard>
 
-        {/* Escape Button (Top-Right) */}
-        <button
+        <PokemonButton
           onClick={() => onBattleEnd('ESCAPED')}
-          className="w-10 h-10 rounded-full bg-slate-900/85 backdrop-blur-md border border-white/15 flex items-center justify-center text-slate-300 hover:text-white shadow-xl active:scale-95 transition"
+          className="w-10 h-10 flex items-center justify-center p-0"
         >
           <ArrowLeft className="w-4 h-4" />
-        </button>
+        </PokemonButton>
       </header>
 
-      {/* BOTTOM UNITE CONTROLLER DECK */}
       <footer className="relative z-10 p-4 flex flex-col gap-3 pointer-events-auto">
-        {/* Battle Announcement Banner */}
-        <div className="bg-slate-900/90 backdrop-blur-md border border-white/15 px-4 py-2 rounded-2xl flex items-center justify-between text-xs font-bold text-white shadow-2xl">
+        <RomDialog className="flex items-center justify-between text-sm">
           <span>{currentMessage}</span>
-          {isProcessingTurn && <Sparkles className="w-4 h-4 text-cyan-400 animate-spin" />}
-        </div>
+          {isProcessingTurn && <Sparkles className="w-4 h-4 animate-pulse-fast" />}
+        </RomDialog>
 
-        {/* Player Status Card */}
-        <div className="bg-slate-900/90 backdrop-blur-md border border-white/15 p-2.5 rounded-2xl shadow-2xl flex items-center justify-between">
+        <PokemonCard className="flex items-center justify-between p-3">
           <div className="flex items-center gap-2">
-            <span className="font-black text-xs text-white uppercase">{battleState.playerPokemon.name}</span>
-            <span className="text-[10px] font-bold text-emerald-400">Lv. {battleState.playerPokemon.level}</span>
+            <span className="font-black text-xs text-pokemon-ui-text uppercase">{battleState.playerPokemon.name}</span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-pokemon-green text-pokemon-dark">
+              Lv. {battleState.playerPokemon.level}
+            </span>
           </div>
-          <div className="w-36 h-2 rounded-full bg-slate-800 overflow-hidden border border-white/10">
-            <div
-              className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300"
-              style={{ width: `${playerHpPercent}%` }}
-            />
+          <div className="w-36">
+            <HealthBar current={playerHp} max={playerMaxHp} />
           </div>
-        </div>
+        </PokemonCard>
 
-        {/* UNITE Move Attack Deck */}
         <div className="grid grid-cols-4 gap-2">
           {battleState.playerPokemon.moves.slice(0, 4).map((m, idx) => (
             <button
               key={`move-${idx}`}
               disabled={isProcessingTurn || m.currentPp <= 0}
               onClick={() => handleExecuteMove(idx)}
-              className="relative p-2.5 rounded-2xl bg-slate-900/95 backdrop-blur-xl border border-white/20 shadow-xl flex flex-col items-center justify-between gap-1 active:scale-95 transition disabled:opacity-40"
+              className="unite-move-button"
+              style={{
+                borderColor: POKEMON_TYPE_THEMES[m.move.type].primaryColor
+              }}
             >
               {getMoveIcon(m.move.type)}
-              <span className="text-[10px] font-black text-slate-100 uppercase tracking-tight text-center truncate w-full">
+              <span className="text-[9px] font-black text-pokemon-ui-text uppercase tracking-tight text-center truncate w-full">
                 {m.move.name}
               </span>
-              <span className="text-[9px] font-bold text-cyan-400">
+              <span className="text-[8px] font-bold text-pokemon-ui-muted">
                 {m.currentPp}/{m.maxPp}
               </span>
             </button>

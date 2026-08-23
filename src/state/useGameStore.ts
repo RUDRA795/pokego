@@ -20,7 +20,7 @@ interface GameStore {
 }
 
 export const useGameStore = create<GameStore>((set) => ({
-  screen: 'LOADING',
+  screen: 'PLAYING',
   isPaused: false,
   encounter: null,
   lastEncounterTime: 0,

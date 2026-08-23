@@ -21,6 +21,8 @@ import { SoundSystem } from '../../systems/audio/SoundSystem';
 import { usePlayerPartyStore } from '../../state/usePlayerPartyStore';
 import { createRuntimePokemon } from '../../battle/RuntimePokemon';
 import { POKEMON_TYPE_THEMES } from '../../data/pokemon/types';
+import { PokemonButton } from '../ui/PokemonButton';
+import { PokemonCard } from '../ui/PokemonCard';
 
 interface PokemonGoCaptureScreenProps {
   species: PokemonSpeciesData;
@@ -237,11 +239,12 @@ export const PokemonGoCaptureScreen: React.FC<PokemonGoCaptureScreenProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col justify-between select-none overflow-hidden bg-slate-950 font-sans"
+      className="fixed inset-0 z-50 flex flex-col justify-between select-none overflow-hidden bg-pokemon-dark font-pokemon"
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
     >
-      {/* 3D WebGL Canvas Layer */}
+      <div className="scanlines" />
+      
       <div className="absolute inset-0 z-0">
         <Canvas
           camera={{ position: [0, 1.2, 0], fov: 50, near: 0.1, far: 50 }}
@@ -256,66 +259,59 @@ export const PokemonGoCaptureScreen: React.FC<PokemonGoCaptureScreenProps> = ({
         </Canvas>
       </div>
 
-      {/* TOP HEADER: Escape & Combat Power Card */}
       <header className="relative z-10 p-4 flex items-center justify-between pointer-events-auto">
-        <button
+        <PokemonButton
           onClick={onEscape}
-          className="w-11 h-11 rounded-full bg-slate-900/80 backdrop-blur-md border border-white/20 flex items-center justify-center text-white active:scale-95 transition shadow-lg"
+          className="w-11 h-11 flex items-center justify-center p-0"
         >
           <ArrowLeft className="w-5 h-5" />
-        </button>
+        </PokemonButton>
 
-        {/* Combat Power (CP) Banner */}
         <div className="flex flex-col items-center">
-          <div className="px-4 py-1 rounded-full bg-slate-900/85 backdrop-blur-md border border-white/15 shadow-xl flex items-center gap-2">
-            <span className="text-slate-400 font-bold text-xs">CP</span>
-            <span className="text-xl font-black text-white tracking-wide">{cp}</span>
-          </div>
-          <span className="text-sm font-extrabold text-slate-200 uppercase mt-1 tracking-wider drop-shadow">
+          <PokemonCard className="px-4 py-1 flex items-center gap-2">
+            <span className="text-pokemon-ui-muted font-bold text-xs">CP</span>
+            <span className="text-xl font-black text-pokemon-ui-text tracking-wide">{cp}</span>
+          </PokemonCard>
+          <span className="text-sm font-extrabold text-pokemon-ui-text uppercase mt-1 tracking-wider">
             {species.name}
           </span>
         </div>
 
-        {/* Razz Berry Indicator if active */}
         <div className="w-11 flex justify-end">
           {razzBerryActive && (
-            <div className="w-10 h-10 rounded-full bg-rose-500/20 border border-rose-500/50 flex items-center justify-center text-lg shadow-lg">
+            <div className="w-10 h-10 rounded-full bg-pokemon-red/20 border-2 border-pokemon-red flex items-center justify-center text-lg">
               🍓
             </div>
           )}
         </div>
       </header>
 
-      {/* CENTER INTERACTIVE TARGET RING & THROW RATING FEEDBACK */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center pointer-events-none">
         {phase === 'AIM' && (
           <div
-            className="relative w-44 h-44 rounded-full border-2 border-white/40 flex items-center justify-center transition-all duration-75"
+            className="relative w-44 h-44 rounded-full border-4 border-pokemon-ui-border flex items-center justify-center transition-all duration-75"
             style={{
               transform: `scale(${targetRingScale})`,
-              borderColor: targetRingScale <= 0.35 ? '#22c55e' : targetRingScale <= 0.7 ? '#facc15' : '#ef4444',
+              borderColor: targetRingScale <= 0.35 ? '#00C127' : targetRingScale <= 0.7 ? '#FFDE00' : '#FF0000',
             }}
           >
             <div
               className="w-full h-full rounded-full border-4 opacity-75 animate-pulse"
               style={{
-                borderColor: targetRingScale <= 0.35 ? '#22c55e' : targetRingScale <= 0.7 ? '#facc15' : '#ef4444',
+                borderColor: targetRingScale <= 0.35 ? '#00C127' : targetRingScale <= 0.7 ? '#FFDE00' : '#FF0000',
               }}
             />
           </div>
         )}
 
-        {/* Throw Rating Feedback Banner (Nice! Great! Excellent!) */}
         {throwFeedback && phase !== 'AIM' && phase !== 'GOTCHA' && (
-          <div className="mt-6 px-5 py-2 rounded-2xl bg-slate-900/90 backdrop-blur-md border border-amber-400/40 text-amber-300 font-black text-sm tracking-wider shadow-2xl animate-in zoom-in-95">
+          <div className="mt-6 px-5 py-2 pokemon-card text-pokemon-yellow font-black text-sm tracking-wider animate-scale-in">
             {throwFeedback.text}
           </div>
         )}
       </div>
 
-      {/* BOTTOM CONTROLLER: Berries, Poké Ball Swipe Pad & Ball Selector */}
       <footer className="relative z-10 p-6 flex items-end justify-between pointer-events-auto">
-        {/* Left: Berry Drawer Button */}
         <div className="relative">
           <button
             onClick={() => {
@@ -323,21 +319,20 @@ export const PokemonGoCaptureScreen: React.FC<PokemonGoCaptureScreenProps> = ({
               setShowBallDrawer(false);
               SoundSystem.playTap();
             }}
-            className="w-14 h-14 rounded-full bg-slate-900/85 backdrop-blur-md border border-white/20 flex items-center justify-center text-2xl shadow-xl active:scale-95 transition"
+            className="w-14 h-14 rounded-full pokemon-card flex items-center justify-center text-2xl"
           >
             🍓
           </button>
 
-          {/* Berry Popup Drawer */}
           {showBerryDrawer && (
-            <div className="absolute bottom-16 left-0 bg-slate-900/95 backdrop-blur-xl border border-white/15 p-2 rounded-2xl shadow-2xl flex flex-col gap-2 animate-in slide-in-from-bottom-2">
+            <div className="absolute bottom-16 left-0 pokemon-dialog p-2 flex flex-col gap-2 animate-slide-up">
               <button
                 onClick={() => {
                   setRazzBerryActive(true);
                   setShowBerryDrawer(false);
                   SoundSystem.playTap();
                 }}
-                className="flex items-center gap-2 p-2 rounded-xl hover:bg-slate-800 text-xs font-bold text-slate-200"
+                className="flex items-center gap-2 p-2 pokemon-button text-xs font-bold text-pokemon-ui-text"
               >
                 <span>🍓</span>
                 <span>Razz Berry (+1.5x)</span>
@@ -346,22 +341,20 @@ export const PokemonGoCaptureScreen: React.FC<PokemonGoCaptureScreenProps> = ({
           )}
         </div>
 
-        {/* Center: Tap/Swipe to Throw Button Prompt */}
         {phase === 'AIM' && (
-          <div className="flex flex-col items-center gap-1.5 animate-bounce">
+          <div className="flex flex-col items-center gap-1.5 animate-bounce-slow">
             <button
               onClick={triggerThrow}
-              className="w-20 h-20 rounded-full bg-gradient-to-t from-red-600 to-rose-500 border-4 border-white shadow-2xl flex items-center justify-center text-white active:scale-95 transition"
+              className="w-20 h-20 rounded-full bg-pokemon-red border-4 border-white flex items-center justify-center text-white"
             >
               <Disc3 className="w-10 h-10" />
             </button>
-            <span className="text-[11px] font-bold text-slate-300 tracking-wider uppercase bg-slate-900/80 px-3 py-0.5 rounded-full border border-white/10">
+            <span className="text-[11px] font-bold text-pokemon-ui-muted tracking-wider uppercase pokemon-card px-3 py-0.5">
               Swipe or Tap to Throw
             </span>
           </div>
         )}
 
-        {/* Right: Ball Drawer Button */}
         <div className="relative">
           <button
             onClick={() => {
@@ -369,31 +362,30 @@ export const PokemonGoCaptureScreen: React.FC<PokemonGoCaptureScreenProps> = ({
               setShowBerryDrawer(false);
               SoundSystem.playTap();
             }}
-            className="w-14 h-14 rounded-full bg-slate-900/85 backdrop-blur-md border border-white/20 flex items-center justify-center text-rose-400 font-bold text-xs shadow-xl active:scale-95 transition uppercase"
+            className="w-14 h-14 rounded-full pokemon-card flex items-center justify-center text-pokemon-red font-bold text-xs uppercase"
           >
             {selectedBall}
           </button>
 
-          {/* Ball Popup Drawer */}
           {showBallDrawer && (
-            <div className="absolute bottom-16 right-0 bg-slate-900/95 backdrop-blur-xl border border-white/15 p-2 rounded-2xl shadow-2xl flex flex-col gap-2 w-36 animate-in slide-in-from-bottom-2">
+            <div className="absolute bottom-16 right-0 pokemon-dialog p-2 flex flex-col gap-2 w-36 animate-slide-up">
               <button
                 onClick={() => { setSelectedBall('poke'); setShowBallDrawer(false); SoundSystem.playTap(); }}
-                className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-800 text-xs font-bold text-red-400"
+                className="flex items-center justify-between p-2 pokemon-button text-xs font-bold text-pokemon-red"
               >
                 <span>Poké Ball</span>
                 <span>1.0x</span>
               </button>
               <button
                 onClick={() => { setSelectedBall('great'); setShowBallDrawer(false); SoundSystem.playTap(); }}
-                className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-800 text-xs font-bold text-blue-400"
+                className="flex items-center justify-between p-2 pokemon-button text-xs font-bold text-pokemon-blue"
               >
                 <span>Great Ball</span>
                 <span>1.5x</span>
               </button>
               <button
                 onClick={() => { setSelectedBall('ultra'); setShowBallDrawer(false); SoundSystem.playTap(); }}
-                className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-800 text-xs font-bold text-amber-400"
+                className="flex items-center justify-between p-2 pokemon-button text-xs font-bold text-pokemon-yellow"
               >
                 <span>Ultra Ball</span>
                 <span>2.0x</span>
@@ -403,44 +395,43 @@ export const PokemonGoCaptureScreen: React.FC<PokemonGoCaptureScreenProps> = ({
         </div>
       </footer>
 
-      {/* GOTCHA! CAPTURE REWARDS POPUP */}
       {phase === 'GOTCHA' && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center animate-in zoom-in-95">
-          <div className="w-24 h-24 rounded-full bg-emerald-500/20 border-2 border-emerald-500/50 flex items-center justify-center text-emerald-400 mb-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/80 flex flex-col items-center justify-center p-6 text-center animate-scale-in">
+          <div className="w-24 h-24 rounded-full bg-pokemon-green/20 border-4 border-pokemon-green flex items-center justify-center text-pokemon-green mb-4">
             <Sparkles className="w-12 h-12 animate-spin-slow" />
           </div>
 
-          <h2 className="text-3xl font-black text-white uppercase tracking-tight mb-1">
+          <h2 className="text-3xl font-black text-pokemon-ui-text uppercase tracking-tight mb-1">
             GOTCHA!
           </h2>
-          <p className="text-base font-bold text-emerald-400 mb-6">
+          <p className="text-base font-bold text-pokemon-green mb-6">
             {species.name} was caught!
           </p>
 
-          {/* Stardust & Candy Rewards */}
-          <div className="w-full max-w-xs bg-slate-900/90 border border-white/10 rounded-2xl p-4 flex justify-around mb-6 shadow-2xl">
+          <div className="w-full max-w-xs pokemon-card p-4 flex justify-around mb-6">
             <div className="flex flex-col items-center">
               <span className="text-xl font-black text-purple-400">+100</span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Stardust</span>
+              <span className="text-[10px] font-bold text-pokemon-ui-muted uppercase">Stardust</span>
             </div>
-            <div className="w-px bg-white/10" />
+            <div className="w-px bg-pokemon-ui-border" />
             <div className="flex flex-col items-center">
-              <span className="text-xl font-black text-amber-400">+3</span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Candies</span>
+              <span className="text-xl font-black text-pokemon-yellow">+3</span>
+              <span className="text-[10px] font-bold text-pokemon-ui-muted uppercase">Candies</span>
             </div>
-            <div className="w-px bg-white/10" />
+            <div className="w-px bg-pokemon-ui-border" />
             <div className="flex flex-col items-center">
               <span className="text-xl font-black text-cyan-400">+{throwFeedback?.bonusXp || 100}</span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase">XP</span>
+              <span className="text-[10px] font-bold text-pokemon-ui-muted uppercase">XP</span>
             </div>
           </div>
 
-          <button
+          <PokemonButton
+            variant="success"
             onClick={onCaptured}
-            className="w-full max-w-xs py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-sm tracking-wider shadow-lg shadow-emerald-500/30 active:scale-95 transition uppercase"
+            className="w-full max-w-xs py-3.5 text-sm"
           >
             OK
-          </button>
+          </PokemonButton>
         </div>
       )}
     </div>

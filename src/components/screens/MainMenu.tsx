@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { Play, Sparkles, Gamepad2, Info, Flame, Droplets, Leaf, Zap, Check } from 'lucide-react';
+import { Play, Gamepad2, Info, Flame, Droplets, Leaf, Zap } from 'lucide-react';
 import { useGameStore } from '../../state/useGameStore';
 import { usePlayerPartyStore } from '../../state/usePlayerPartyStore';
 import { POKEMON_SPECIES_DATABASE } from '../../data/pokemon';
 import { POKEMON_TYPE_THEMES } from '../../data/pokemon/types';
 import { PokemonType } from '../../types/pokemon';
+import { PokemonButton } from '../ui/PokemonButton';
+import { PokemonCard } from '../ui/PokemonCard';
+import { TypeBadge } from '../ui/TypeBadge';
 
 export const MainMenu: React.FC = () => {
   const setScreen = useGameStore((state) => state.setScreen);
@@ -15,7 +18,6 @@ export const MainMenu: React.FC = () => {
   const [selectedStarterId, setSelectedStarterId] = useState<string>('pikachu');
   const [showInfo, setShowInfo] = useState(false);
 
-  // Showcase starters & iconic test Pokémon
   const starterIds = ['bulbasaur', 'charmander', 'squirtle', 'pikachu'];
   const starters = starterIds
     .map((id) => POKEMON_SPECIES_DATABASE[id])
@@ -23,11 +25,11 @@ export const MainMenu: React.FC = () => {
 
   const getElementIcon = (type: PokemonType) => {
     switch (type) {
-      case 'Fire': return <Flame className="w-3.5 h-3.5 text-orange-400" />;
-      case 'Water': return <Droplets className="w-3.5 h-3.5 text-sky-400" />;
-      case 'Grass': return <Leaf className="w-3.5 h-3.5 text-emerald-400" />;
-      case 'Electric': return <Zap className="w-3.5 h-3.5 text-amber-400" />;
-      default: return <Sparkles className="w-3.5 h-3.5 text-cyan-400" />;
+      case 'Fire': return <Flame className="w-4 h-4" />;
+      case 'Water': return <Droplets className="w-4 h-4" />;
+      case 'Grass': return <Leaf className="w-4 h-4" />;
+      case 'Electric': return <Zap className="w-4 h-4" />;
+      default: return <Zap className="w-4 h-4" />;
     }
   };
 
@@ -39,52 +41,49 @@ export const MainMenu: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-between p-6 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 select-none overflow-y-auto font-sans">
-      {/* Background Grid */}
-      <div className="absolute inset-0 retro-grid opacity-25 pointer-events-none" />
-
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-between p-6 bg-pokemon-dark select-none overflow-y-auto font-pokemon">
+      <div className="scanlines" />
+      
       {/* Top Header */}
-      <div className="w-full flex justify-between items-center max-w-md pt-2">
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/60 border border-white/10 text-xs font-semibold text-slate-300">
-          <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Pokémon Engine v0.3.0</span>
+      <div className="w-full flex justify-between items-center max-w-md pt-2 relative z-10">
+        <div className="pokemon-card px-4 py-2 flex items-center gap-2">
+          <span className="text-xs font-bold text-pokemon-ui-text">POKÉMON ENGINE v1.0</span>
         </div>
 
         <button
           onClick={() => setShowInfo(!showInfo)}
-          aria-label="Game Info"
-          className="p-2 rounded-full bg-slate-800/60 hover:bg-slate-700/60 border border-white/10 text-slate-300 hover:text-white transition"
+          className="pokemon-button w-10 h-10 flex items-center justify-center p-0"
         >
           <Info className="w-4 h-4" />
         </button>
       </div>
 
       {/* Center Branding & Pokémon Showcase */}
-      <div className="w-full max-w-md flex flex-col items-center my-auto py-6">
-        {/* Glowing Title Card */}
-        <div className="relative mb-6 text-center">
-          <h1 className="text-4xl sm:text-5xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-300 to-amber-300 uppercase drop-shadow-lg">
-            Pokémon RPG
+      <div className="w-full max-w-md flex flex-col items-center my-auto py-6 relative z-10">
+        {/* Title Card */}
+        <div className="pokemon-card mb-6 text-center p-6">
+          <h1 className="text-3xl font-black tracking-wider text-pokemon-red uppercase mb-2">
+            POKÉMON RPG
           </h1>
-          <p className="text-xs sm:text-sm font-semibold tracking-widest text-slate-400 uppercase mt-1">
-            Mobile 3D Exploration & Battle
+          <p className="text-xs font-bold tracking-widest text-pokemon-ui-muted uppercase">
+            3D EXPLORATION & BATTLE
           </p>
         </div>
 
         {/* Choose Starter Section */}
         <div className="w-full mb-3 text-left flex justify-between items-center px-1">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-            {hasChosenStarter ? 'Active Starter' : 'Choose Your Starter'}
+          <span className="text-xs font-bold text-pokemon-ui-muted uppercase tracking-wider">
+            {hasChosenStarter ? 'ACTIVE STARTER' : 'CHOOSE YOUR STARTER'}
           </span>
           {hasChosenStarter && (
-            <span className="text-[10px] text-emerald-400 font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30">
-              Selected
+            <span className="text-[10px] font-bold px-2 py-1 rounded bg-pokemon-green text-pokemon-dark">
+              SELECTED
             </span>
           )}
         </div>
 
-        {/* 4 Iconic Starters Showcase Cards */}
-        <div className="w-full grid grid-cols-4 gap-2 mb-8">
+        {/* Starter Cards */}
+        <div className="w-full grid grid-cols-4 gap-2 mb-6">
           {starters.map((pokemon) => {
             const theme = POKEMON_TYPE_THEMES[pokemon.primaryType];
             const isSelected = selectedStarterId === pokemon.id;
@@ -93,73 +92,75 @@ export const MainMenu: React.FC = () => {
               <button
                 key={pokemon.id}
                 onClick={() => setSelectedStarterId(pokemon.id)}
-                className={`p-2.5 rounded-2xl border flex flex-col items-center text-center shadow-lg transition active:scale-95 ${
-                  isSelected
-                    ? 'bg-slate-800 border-cyan-400 shadow-cyan-500/20'
-                    : 'bg-slate-900/80 hover:bg-slate-850 border-white/10'
+                className={`pokemon-card p-2 flex flex-col items-center transition ${
+                  isSelected ? 'border-pokemon-blue' : ''
                 }`}
               >
                 <div
-                  className="w-10 h-10 rounded-xl mb-1.5 flex items-center justify-center border border-white/10"
-                  style={{ backgroundColor: `${theme.primaryColor}25` }}
+                  className="w-12 h-12 rounded-lg mb-2 flex items-center justify-center border-2 border-pokemon-ui-border"
+                  style={{ backgroundColor: theme.primaryColor }}
                 >
                   {getElementIcon(pokemon.primaryType)}
                 </div>
-                <span className="font-bold text-[11px] text-white leading-tight mb-0.5">{pokemon.name}</span>
-                <span className="text-[9px] text-slate-400 font-medium">#{String(pokemon.nationalDexNumber).padStart(3, '0')}</span>
+                <span className="font-bold text-xs text-pokemon-ui-text">{pokemon.name}</span>
+                <span className="text-[9px] text-pokemon-ui-muted">
+                  #{String(pokemon.nationalDexNumber).padStart(3, '0')}
+                </span>
               </button>
             );
           })}
         </div>
 
-        {/* Play Action Button */}
-        <button
+        {/* Play Button */}
+        <PokemonButton
+          variant="primary"
           onClick={handleStartGame}
-          className="w-full py-4 px-8 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-lg tracking-wider uppercase flex items-center justify-center gap-3 shadow-xl shadow-emerald-500/25 active:scale-95 transition"
+          className="w-full py-4 text-lg flex items-center justify-center gap-2"
         >
-          <Play className="w-6 h-6 fill-current" />
-          <span>{hasChosenStarter ? 'Continue Adventure' : 'Start Adventure'}</span>
-        </button>
+          <Play className="w-5 h-5" />
+          <span>{hasChosenStarter ? 'CONTINUE' : 'START ADVENTURE'}</span>
+        </PokemonButton>
       </div>
 
-      {/* Info / Controls Modal */}
+      {/* Info Modal */}
       {showInfo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-          <div className="w-full max-w-sm rounded-3xl bg-slate-900 border border-white/20 p-5 shadow-2xl text-left space-y-4">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div className="flex items-center gap-2 font-bold text-white text-base">
-                <Gamepad2 className="w-5 h-5 text-emerald-400" />
-                <span>Controls & Pokédex Guide</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+          <div className="pokemon-dialog w-full max-w-sm">
+            <div className="flex items-center justify-between border-b-2 border-pokemon-ui-border pb-3 mb-4">
+              <div className="flex items-center gap-2 font-bold text-pokemon-ui-text">
+                <Gamepad2 className="w-5 h-5" />
+                <span>CONTROLS</span>
               </div>
               <button
                 onClick={() => setShowInfo(false)}
-                className="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:text-white"
+                className="pokemon-button text-xs px-3 py-1"
               >
-                Close
+                CLOSE
               </button>
             </div>
 
-            <div className="space-y-2 text-xs text-slate-300">
-              <div className="p-2.5 rounded-xl bg-slate-950/60 border border-white/5 space-y-1">
-                <span className="font-bold text-slate-100 block">Controls:</span>
-                <p>• <span className="font-mono text-cyan-300">WASD / Arrow Keys</span> or <span className="font-semibold text-emerald-300">Virtual Joystick</span> to move</p>
-                <p>• <span className="font-mono text-cyan-300">P / Esc</span> to pause game</p>
+            <div className="space-y-3 text-sm text-pokemon-ui-text">
+              <div className="pokemon-card p-3">
+                <span className="font-bold block mb-2">MOVEMENT:</span>
+                <p>• WASD / Arrow Keys to move</p>
+                <p>• Virtual Joystick for touch</p>
+                <p>• P / Esc to pause</p>
               </div>
 
-              <div className="p-2.5 rounded-xl bg-slate-950/60 border border-white/5 space-y-1">
-                <span className="font-bold text-slate-100 block">Combat & Capture:</span>
-                <p>• Approach wild Pokémon to battle and use level-appropriate attacks.</p>
-                <p>• Throw Poké Balls to capture weakened wild Pokémon for your party!</p>
-                <p>• Gain XP from victories to level up and trigger evolutionary growth.</p>
+              <div className="pokemon-card p-3">
+                <span className="font-bold block mb-2">COMBAT:</span>
+                <p>• Approach wild Pokémon to battle</p>
+                <p>• Use moves to weaken opponents</p>
+                <p>• Throw Poké Balls to capture</p>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Footer Details */}
-      <footer className="w-full max-w-md text-center py-2 text-[11px] text-slate-500 font-medium">
-        Mobile 3D Pokémon Engine • Turn-Based Combat & Collection
+      {/* Footer */}
+      <footer className="w-full max-w-md text-center py-2 text-[10px] text-pokemon-ui-muted relative z-10">
+        POKÉMON 3D RPG • EXPLORATION & COLLECTION
       </footer>
     </div>
   );

@@ -78,27 +78,24 @@ export const Joystick: React.FC<JoystickProps> = ({ size = 120 }) => {
       onPointerCancel={handlePointerUp}
       style={{ width: size, height: size }}
       className={`relative rounded-full flex items-center justify-center select-none touch-none transition-opacity duration-200 ${
-        active ? 'bg-slate-900/80 border-cyan-400/60 shadow-lg shadow-cyan-500/20' : 'bg-slate-900/50 border-slate-700/60'
-      } border-2 backdrop-blur-md`}
+        active ? 'bg-pokemon-ui-card/80 border-pokemon-blue shadow-lg' : 'bg-pokemon-ui-card/50 border-pokemon-ui-border'
+      } border-4`}
     >
-      {/* Outer directional indicator ring */}
-      <div className="absolute inset-2 rounded-full border border-dashed border-slate-600/40 pointer-events-none" />
+      <div className="absolute inset-2 rounded-full border-2 border-dashed border-pokemon-ui-border pointer-events-none" />
 
-      {/* Center crosshair */}
-      <div className="w-2 h-2 rounded-full bg-slate-500/40 pointer-events-none" />
+      <div className="w-2 h-2 rounded-full bg-pokemon-ui-muted pointer-events-none" />
 
-      {/* Interactive Handle */}
       <div
         style={{
           transform: `translate(${handlePos.x}px, ${handlePos.y}px)`,
         }}
         className={`w-12 h-12 rounded-full flex items-center justify-center pointer-events-none transition-transform duration-75 ${
           active
-            ? 'bg-gradient-to-tr from-cyan-500 to-blue-600 shadow-md shadow-cyan-500/50 scale-105'
-            : 'bg-slate-700/80 shadow'
-        } border border-white/20`}
+            ? 'bg-pokemon-blue shadow-md scale-105'
+            : 'bg-pokemon-ui-border shadow'
+        } border-4 border-white`}
       >
-        <div className="w-4 h-4 rounded-full bg-white/40" />
+        <div className="w-4 h-4 rounded-full bg-white/60" />
       </div>
     </div>
   );

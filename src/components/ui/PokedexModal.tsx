@@ -14,6 +14,9 @@ import { POKEMON_SPECIES_LIST } from '../../data/pokemon';
 import { POKEMON_TYPE_THEMES } from '../../data/pokemon/types';
 import { usePlayerPartyStore } from '../../state/usePlayerPartyStore';
 import { PokemonSpeciesData, PokemonType } from '../../types/pokemon';
+import { PokemonButton } from './PokemonButton';
+import { PokemonCard } from './PokemonCard';
+import { TypeBadge } from './TypeBadge';
 
 interface PokedexModalProps {
   onClose: () => void;
@@ -77,65 +80,59 @@ export const PokedexModal: React.FC<PokedexModalProps> = ({ onClose }) => {
   const secondaryTheme = selectedSpecies.secondaryType ? POKEMON_TYPE_THEMES[selectedSpecies.secondaryType] : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200 font-sans">
-      <div className="relative w-full max-w-4xl h-[92vh] max-h-[700px] overflow-hidden rounded-3xl bg-slate-900 border border-white/20 shadow-2xl flex flex-col md:flex-row">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 animate-fade-in font-pokemon">
+      <div className="relative w-full max-w-4xl h-[92vh] max-h-[700px] overflow-hidden pokemon-dialog flex flex-col md:flex-row">
         
-        {/* LEFT COLUMN: Search, Filters & Pokémon Grid */}
-        <div className="w-full md:w-1/2 p-3 sm:p-4 border-b md:border-b-0 md:border-r border-white/10 flex flex-col justify-between overflow-hidden">
+        <div className="w-full md:w-1/2 p-3 sm:p-4 border-b md:border-b-0 md:border-r-4 border-pokemon-ui-border flex flex-col justify-between overflow-hidden">
           <div className="space-y-2.5 flex-1 flex flex-col overflow-hidden">
-            {/* Header & Progress Stats */}
             <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2 text-white font-black text-sm sm:text-base">
-                <BookOpen className="w-5 h-5 text-emerald-400" />
+              <div className="flex items-center gap-2 text-pokemon-ui-text font-black text-sm sm:text-base">
+                <BookOpen className="w-5 h-5 text-pokemon-green" />
                 <span>National Pokédex</span>
               </div>
 
-              {/* Discovery Stats Bar */}
               <div className="flex items-center gap-2 text-[11px] font-bold">
-                <span className="text-cyan-400">Seen: {seenCount}/{totalCount}</span>
-                <span className="text-slate-500">•</span>
-                <span className="text-emerald-400">Caught: {caughtCount}/{totalCount}</span>
+                <span className="text-pokemon-blue">Seen: {seenCount}/{totalCount}</span>
+                <span className="text-pokemon-ui-muted">•</span>
+                <span className="text-pokemon-green">Caught: {caughtCount}/{totalCount}</span>
               </div>
             </div>
 
-            {/* Search Input */}
             <div className="relative">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-pokemon-ui-muted" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by name or #number..."
-                className="w-full py-2 pl-9 pr-3 rounded-xl bg-slate-950/80 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition"
+                className="w-full py-2 pl-9 pr-3 pokemon-card text-xs text-pokemon-ui-text placeholder-pokemon-ui-muted"
               />
             </div>
 
-            {/* Filter Pills & Sort Selectors */}
             <div className="flex flex-wrap gap-1.5 text-[11px]">
               <button
                 onClick={() => setFilterState('ALL')}
-                className={`px-2.5 py-1 rounded-full font-bold transition ${filterState === 'ALL' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}
+                className={`px-2.5 py-1 rounded-full font-bold pokemon-button ${filterState === 'ALL' ? 'bg-pokemon-green text-pokemon-dark' : 'text-pokemon-ui-muted'}`}
               >
                 All
               </button>
               <button
                 onClick={() => setFilterState('CAUGHT')}
-                className={`px-2.5 py-1 rounded-full font-bold transition ${filterState === 'CAUGHT' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}
+                className={`px-2.5 py-1 rounded-full font-bold pokemon-button ${filterState === 'CAUGHT' ? 'bg-pokemon-green text-pokemon-dark' : 'text-pokemon-ui-muted'}`}
               >
                 Caught ({caughtCount})
               </button>
               <button
                 onClick={() => setFilterState('SEEN')}
-                className={`px-2.5 py-1 rounded-full font-bold transition ${filterState === 'SEEN' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}
+                className={`px-2.5 py-1 rounded-full font-bold pokemon-button ${filterState === 'SEEN' ? 'bg-pokemon-blue text-pokemon-dark' : 'text-pokemon-ui-muted'}`}
               >
                 Seen ({seenCount})
               </button>
 
-              {/* Sort By Dropdown */}
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="ml-auto bg-slate-800 text-slate-300 rounded-full px-2 py-0.5 border border-white/10 text-[10px] font-bold focus:outline-none"
+                className="ml-auto pokemon-card text-pokemon-ui-text rounded-full px-2 py-0.5 text-[10px] font-bold"
               >
                 <option value="NUM_ASC"># Number (Low-High)</option>
                 <option value="NUM_DESC"># Number (High-Low)</option>
@@ -144,7 +141,6 @@ export const PokedexModal: React.FC<PokedexModalProps> = ({ onClose }) => {
               </select>
             </div>
 
-            {/* Scrollable Pokémon List */}
             <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
               {filteredList.map((species) => {
                 const caught = pokedexCaught.includes(species.id);
@@ -155,38 +151,36 @@ export const PokedexModal: React.FC<PokedexModalProps> = ({ onClose }) => {
                   <button
                     key={species.id}
                     onClick={() => setSelectedSpecies(species)}
-                    className={`w-full p-2 rounded-2xl border text-left flex items-center justify-between transition active:scale-95 ${
+                    className={`w-full p-2 rounded-2xl border-4 text-left flex items-center justify-between transition ${
                       isSelected
-                        ? 'bg-emerald-950/50 border-emerald-500/50 shadow-md shadow-emerald-500/10'
-                        : 'bg-slate-950/50 hover:bg-slate-800/80 border-white/5'
+                        ? 'bg-pokemon-green/20 border-pokemon-green'
+                        : 'pokemon-card'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <span className="font-mono text-xs text-slate-400 font-bold">
+                      <span className="font-mono text-xs text-pokemon-ui-muted font-bold">
                         #{String(species.nationalDexNumber).padStart(3, '0')}
                       </span>
-                      <span className="font-extrabold text-xs text-white">
+                      <span className="font-extrabold text-xs text-pokemon-ui-text">
                         {seen ? species.name : '???'}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-1.5">
                       {seen && (
-                        <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-slate-800 text-slate-300">
-                          {species.primaryType}
-                        </span>
+                        <TypeBadge type={species.primaryType} />
                       )}
 
                       {caught ? (
-                        <span className="flex items-center gap-0.5 text-[9px] text-emerald-400 font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30">
+                        <span className="flex items-center gap-0.5 text-[9px] text-pokemon-green font-bold px-1.5 py-0.5 rounded pokemon-card border-pokemon-green">
                           <CheckCircle className="w-2.5 h-2.5" /> Caught
                         </span>
                       ) : seen ? (
-                        <span className="flex items-center gap-0.5 text-[9px] text-cyan-400 font-bold px-1.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30">
+                        <span className="flex items-center gap-0.5 text-[9px] text-pokemon-blue font-bold px-1.5 py-0.5 rounded pokemon-card border-pokemon-blue">
                           <Eye className="w-2.5 h-2.5" /> Seen
                         </span>
                       ) : (
-                        <span className="text-[9px] text-slate-500 font-mono">Unseen</span>
+                        <span className="text-[9px] text-pokemon-ui-muted font-mono">Unseen</span>
                       )}
                     </div>
                   </button>
@@ -196,109 +190,96 @@ export const PokedexModal: React.FC<PokedexModalProps> = ({ onClose }) => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Detail Info Card */}
-        <div className="w-full md:w-1/2 p-4 sm:p-5 flex flex-col justify-between overflow-y-auto bg-slate-950/75">
+        <div className="w-full md:w-1/2 p-4 sm:p-5 flex flex-col justify-between overflow-y-auto pokemon-card">
           <div className="space-y-3.5">
-            {/* Top Bar with Close Button */}
             <div className="flex justify-between items-start">
               <div>
-                <span className="font-mono text-xs text-slate-400 font-bold block">
+                <span className="font-mono text-xs text-pokemon-ui-muted font-bold block">
                   #{String(selectedSpecies.nationalDexNumber).padStart(4, '0')}
                 </span>
-                <h2 className="text-2xl font-black text-white uppercase tracking-tight">
+                <h2 className="text-2xl font-black text-pokemon-ui-text uppercase tracking-tight">
                   {isSeen ? selectedSpecies.name : 'Unknown Pokémon'}
                 </h2>
-                <p className="text-xs text-slate-400 font-medium">
+                <p className="text-xs text-pokemon-ui-muted font-medium">
                   {isSeen ? `${selectedSpecies.speciesCategory} • Gen ${selectedSpecies.generation}` : 'Undiscovered Species'}
                 </p>
               </div>
 
-              <button
+              <PokemonButton
                 onClick={onClose}
-                className="p-2 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition"
+                className="p-2"
               >
                 <X className="w-4 h-4" />
-              </button>
+              </PokemonButton>
             </div>
 
             {isSeen ? (
               <>
-                {/* Typing Badges */}
                 <div className="flex gap-2">
-                  <span className={`px-3 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r ${primaryTheme.badgeGradient} ${primaryTheme.textColor}`}>
-                    {selectedSpecies.primaryType}
-                  </span>
-                  {selectedSpecies.secondaryType && secondaryTheme && (
-                    <span className={`px-3 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r ${secondaryTheme.badgeGradient} ${secondaryTheme.textColor}`}>
-                      {selectedSpecies.secondaryType}
-                    </span>
-                  )}
+                  <TypeBadge type={selectedSpecies.primaryType} />
+                  {selectedSpecies.secondaryType && <TypeBadge type={selectedSpecies.secondaryType} />}
                 </div>
 
-                {/* Biology & Habitat Metrics */}
-                <div className="grid grid-cols-3 gap-2 bg-slate-900/80 p-2.5 rounded-2xl border border-white/5 text-xs text-center">
+                <div className="grid grid-cols-3 gap-2 pokemon-card p-2.5 text-xs text-center">
                   <div>
-                    <span className="text-slate-400 text-[9px] font-semibold block uppercase">HEIGHT</span>
-                    <span className="font-bold text-slate-200">{selectedSpecies.heightMeters} m</span>
+                    <span className="text-pokemon-ui-muted text-[9px] font-semibold block uppercase">HEIGHT</span>
+                    <span className="font-bold text-pokemon-ui-text">{selectedSpecies.heightMeters} m</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 text-[9px] font-semibold block uppercase">WEIGHT</span>
-                    <span className="font-bold text-slate-200">{selectedSpecies.weightKg} kg</span>
+                    <span className="text-pokemon-ui-muted text-[9px] font-semibold block uppercase">WEIGHT</span>
+                    <span className="font-bold text-pokemon-ui-text">{selectedSpecies.weightKg} kg</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 text-[9px] font-semibold block uppercase">HABITAT</span>
-                    <span className="font-bold text-emerald-400">{selectedSpecies.canonicalHabitat}</span>
+                    <span className="text-pokemon-ui-muted text-[9px] font-semibold block uppercase">HABITAT</span>
+                    <span className="font-bold text-pokemon-green">{selectedSpecies.canonicalHabitat}</span>
                   </div>
                 </div>
 
-                {/* Pokédex Entry */}
-                <p className="text-xs text-slate-300 italic leading-relaxed bg-slate-900/50 p-3 rounded-2xl border border-white/5">
+                <p className="text-xs text-pokemon-ui-text italic leading-relaxed pokemon-card p-3">
                   "{selectedSpecies.pokedexEntry}"
                 </p>
 
-                {/* Ability Details */}
-                <div className="bg-slate-900/80 p-2.5 rounded-2xl border border-white/5 text-xs">
-                  <span className="text-slate-400 text-[9px] font-semibold block uppercase mb-0.5">ABILITY</span>
-                  <span className="font-bold text-white block">{selectedSpecies.abilities[0]?.name}</span>
-                  <span className="text-[11px] text-slate-300">{selectedSpecies.abilities[0]?.description}</span>
+                <div className="pokemon-card p-2.5 text-xs">
+                  <span className="text-pokemon-ui-muted text-[9px] font-semibold block uppercase mb-0.5">ABILITY</span>
+                  <span className="font-bold text-pokemon-ui-text block">{selectedSpecies.abilities[0]?.name}</span>
+                  <span className="text-[11px] text-pokemon-ui-muted">{selectedSpecies.abilities[0]?.description}</span>
                 </div>
 
-                {/* Base Stats Breakdown */}
                 <div className="space-y-1.5">
-                  <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider text-pokemon-ui-muted">
                     <span>Base Stats</span>
-                    <span className="text-cyan-300 font-mono">BST: {selectedSpecies.baseStats.baseStatTotal}</span>
+                    <span className="text-pokemon-blue font-mono">BST: {selectedSpecies.baseStats.baseStatTotal}</span>
                   </div>
                   <div className="grid grid-cols-3 gap-1.5 text-center text-xs">
-                    <div className="bg-slate-900 p-1.5 rounded-xl border border-white/5">
-                      <span className="text-[9px] text-slate-400 block">HP</span>
-                      <span className="font-bold text-emerald-400">{selectedSpecies.baseStats.hp}</span>
+                    <div className="pokemon-card p-1.5">
+                      <span className="text-[9px] text-pokemon-ui-muted block">HP</span>
+                      <span className="font-bold text-pokemon-green">{selectedSpecies.baseStats.hp}</span>
                     </div>
-                    <div className="bg-slate-900 p-1.5 rounded-xl border border-white/5">
-                      <span className="text-[9px] text-slate-400 block">ATK</span>
-                      <span className="font-bold text-amber-400">{selectedSpecies.baseStats.attack}</span>
+                    <div className="pokemon-card p-1.5">
+                      <span className="text-[9px] text-pokemon-ui-muted block">ATK</span>
+                      <span className="font-bold text-pokemon-yellow">{selectedSpecies.baseStats.attack}</span>
                     </div>
-                    <div className="bg-slate-900 p-1.5 rounded-xl border border-white/5">
-                      <span className="text-[9px] text-slate-400 block">DEF</span>
-                      <span className="font-bold text-sky-400">{selectedSpecies.baseStats.defense}</span>
+                    <div className="pokemon-card p-1.5">
+                      <span className="text-[9px] text-pokemon-ui-muted block">DEF</span>
+                      <span className="font-bold text-pokemon-blue">{selectedSpecies.baseStats.defense}</span>
                     </div>
-                    <div className="bg-slate-900 p-1.5 rounded-xl border border-white/5">
-                      <span className="text-[9px] text-slate-400 block">SP.ATK</span>
+                    <div className="pokemon-card p-1.5">
+                      <span className="text-[9px] text-pokemon-ui-muted block">SP.ATK</span>
                       <span className="font-bold text-purple-400">{selectedSpecies.baseStats.specialAttack}</span>
                     </div>
-                    <div className="bg-slate-900 p-1.5 rounded-xl border border-white/5">
-                      <span className="text-[9px] text-slate-400 block">SP.DEF</span>
+                    <div className="pokemon-card p-1.5">
+                      <span className="text-[9px] text-pokemon-ui-muted block">SP.DEF</span>
                       <span className="font-bold text-indigo-400">{selectedSpecies.baseStats.specialDefense}</span>
                     </div>
-                    <div className="bg-slate-900 p-1.5 rounded-xl border border-white/5">
-                      <span className="text-[9px] text-slate-400 block">SPEED</span>
+                    <div className="pokemon-card p-1.5">
+                      <span className="text-[9px] text-pokemon-ui-muted block">SPEED</span>
                       <span className="font-bold text-cyan-400">{selectedSpecies.baseStats.speed}</span>
                     </div>
                   </div>
                 </div>
               </>
             ) : (
-              <div className="p-8 text-center text-slate-500 space-y-2">
+              <div className="p-8 text-center text-pokemon-ui-muted space-y-2">
                 <Sparkles className="w-8 h-8 mx-auto opacity-30" />
                 <p className="text-xs font-semibold">Encounter this Pokémon in the wild to reveal its Pokédex entry and statistics.</p>
               </div>

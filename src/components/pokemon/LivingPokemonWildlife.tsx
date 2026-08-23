@@ -1,10 +1,13 @@
 /**
- * Pokémon 3D RPG — Living Wildlife AI Simulation Engine
+ * Pokémon 3D RPG — Living Wildlife AI Simulation Engine (Pure 3D Immersion)
  * 
  * Drives natural wildlife ecology for overworld Pokémon:
  * - Direct elevation grounding via `TerrainHeightmap.getHeight(x, z)`.
  * - Habitat constraints: Magikarp in stream, Pidgey in airspace, Caterpie/Bulbasaur in forest.
- * - Distance-based player reactions: Far (ignore), Medium (look toward), Near (curious/cautious), Very close (encounter).
+ * - Distance-based real-time 3D player reactions:
+ *   - Far (> 10m): autonomous wildlife routine (wandering, grazing, flying, swimming).
+ *   - Medium (4–10m): notice player, look toward player.
+ *   - Close (< 3m): joyful greetings, curious head tilts, tail wags, cheek sparks, and playful hops.
  * - Multi-joint skeletal animation state bridging (`PokemonSkeletonRig`).
  */
 
@@ -15,7 +18,6 @@ import { ActivePokemon } from '../../types/pokemon';
 import { getPokemonById } from '../../data/pokemon';
 import { TerrainHeightmap } from '../../systems/world/TerrainHeightmap';
 import { usePlayerStore } from '../../state/usePlayerStore';
-import { useGameStore } from '../../state/useGameStore';
 import { distance2D, lerpAngle, randomInRange } from '../../utils/math';
 import { PokemonSkeletonRig, WildlifeAnimationState } from './PokemonSkeletonRig';
 
@@ -28,10 +30,6 @@ export const LivingPokemonWildlife: React.FC<LivingPokemonWildlifeProps> = ({ po
   const species = getPokemonById(pokemon.speciesId);
   const playerPos = usePlayerStore((state) => state.position);
 
-  const isPaused = useGameStore((state) => state.isPaused);
-  const lastEncounterTime = useGameStore((state) => state.lastEncounterTime);
-  const triggerEncounter = useGameStore((state) => state.triggerEncounter);
-
   // Wildlife State Machine
   const [wildlifeState, setWildlifeState] = useState<WildlifeAnimationState>('IDLE');
   const posRef = useRef({ x: pokemon.position[0], z: pokemon.position[2] });
@@ -40,60 +38,51 @@ export const LivingPokemonWildlife: React.FC<LivingPokemonWildlifeProps> = ({ po
   const timerRef = useRef(randomInRange(2.5, 5.0));
 
   useFrame((_, delta) => {
-    if (isPaused || !groupRef.current || !species) return;
+    if (!groupRef.current || !species) return;
 
     const px = playerPos[0];
     const pz = playerPos[2];
     const distToPlayer = distance2D(posRef.current.x, posRef.current.z, px, pz);
-    const cooldownActive = Date.now() - lastEncounterTime < 3500;
 
-    // 1. Proximity Encounter Trigger (< 1.8m)
-    if (distToPlayer < 1.8 && !cooldownActive) {
-      triggerEncounter({
-        pokemon: {
-          ...pokemon,
-          position: [posRef.current.x, TerrainHeightmap.getHeight(posRef.current.x, posRef.current.z), posRef.current.z],
-          rotation: rotRef.current,
-          state: 'ENCOUNTER',
-        },
-        pokemonSpecies: species,
-      });
-      return;
-    }
-
-    // 2. Distance-Based Player Awareness
-    if (distToPlayer < 7.5 && !cooldownActive) {
-      // Face toward player
+    // 1. Close-Range Live 3D Interaction (< 3.5m)
+    if (distToPlayer < 3.5) {
       const dxPlayer = px - posRef.current.x;
       const dzPlayer = pz - posRef.current.z;
       const angleToPlayer = Math.atan2(dxPlayer, dzPlayer);
 
-      if (distToPlayer < 4.0) {
+      rotRef.current = lerpAngle(rotRef.current, angleToPlayer, 8 * delta);
+
+      if (distToPlayer < 2.0) {
         if (species.id === 'pikachu') {
-          if (wildlifeState !== 'CURIOUS') setWildlifeState('CURIOUS');
+          if (wildlifeState !== 'PLAY') setWildlifeState('PLAY');
         } else if (species.id === 'pidgey') {
           if (wildlifeState !== 'FLY') setWildlifeState('FLY');
         } else {
-          if (wildlifeState !== 'OBSERVE') setWildlifeState('OBSERVE');
+          if (wildlifeState !== 'CURIOUS') setWildlifeState('CURIOUS');
         }
       } else {
         if (wildlifeState !== 'OBSERVE') setWildlifeState('OBSERVE');
       }
+    } else if (distToPlayer < 8.0) {
+      // Medium Range: Notice player and face them
+      const dxPlayer = px - posRef.current.x;
+      const dzPlayer = pz - posRef.current.z;
+      const angleToPlayer = Math.atan2(dxPlayer, dzPlayer);
+      rotRef.current = lerpAngle(rotRef.current, angleToPlayer, 4 * delta);
 
-      rotRef.current = lerpAngle(rotRef.current, angleToPlayer, 6 * delta);
-    } else if (wildlifeState === 'OBSERVE' || wildlifeState === 'CURIOUS') {
+      if (wildlifeState === 'PLAY') setWildlifeState('OBSERVE');
+    } else if (wildlifeState === 'OBSERVE' || wildlifeState === 'CURIOUS' || wildlifeState === 'PLAY') {
       setWildlifeState('IDLE');
       timerRef.current = randomInRange(2, 4);
     }
 
-    // 3. Autonomous Wildlife Locomotion & State Machine
+    // 2. Autonomous Wildlife Locomotion
     const isFish = species.id === 'magikarp';
     const isBird = species.id === 'pidgey' || species.id === 'pidgeotto';
 
     if (wildlifeState === 'IDLE') {
       timerRef.current -= delta;
       if (timerRef.current <= 0) {
-        // Pick new organic wander target within natural habitat
         const wanderRadius = isBird ? 8.0 : 4.5;
         const targetX = posRef.current.x + randomInRange(-wanderRadius, wanderRadius);
         const targetZ = posRef.current.z + randomInRange(-wanderRadius, wanderRadius);
@@ -132,14 +121,14 @@ export const LivingPokemonWildlife: React.FC<LivingPokemonWildlifeProps> = ({ po
       }
     }
 
-    // 4. Physical Elevation Alignment
+    // 3. Physical Elevation Snapping
     let groundY = TerrainHeightmap.getHeight(posRef.current.x, posRef.current.z);
 
     if (isFish) {
       const waterY = TerrainHeightmap.getWaterLevel(posRef.current.x, posRef.current.z);
       if (waterY !== null) groundY = waterY - 0.15;
     } else if (isBird && wildlifeState === 'FLY') {
-      groundY += 1.8; // Airspace cruising altitude
+      groundY += 1.8; // Airspace flight altitude
     }
 
     groupRef.current.position.set(posRef.current.x, groundY, posRef.current.z);

@@ -20,6 +20,10 @@ import { CombatPowerSystem } from '../../systems/progression/CombatPowerSystem';
 import { SoundSystem } from '../../systems/audio/SoundSystem';
 import { getPokemonById } from '../../data/pokemon';
 import { POKEMON_TYPE_THEMES } from '../../data/pokemon/types';
+import { PokemonButton } from './PokemonButton';
+import { PokemonCard } from './PokemonCard';
+import { TypeBadge } from './TypeBadge';
+import { HealthBar } from './HealthBar';
 
 interface PokemonGoPartyModalProps {
   onClose: () => void;
@@ -39,31 +43,28 @@ export const PokemonGoPartyModal: React.FC<PokemonGoPartyModalProps> = ({ onClos
   const primaryTheme = POKEMON_TYPE_THEMES[species.primaryType] || POKEMON_TYPE_THEMES.Normal;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-2xl flex flex-col justify-between select-none overflow-y-auto font-sans animate-in fade-in duration-200">
-      {/* Top Header Navigation */}
-      <header className="p-4 flex items-center justify-between border-b border-white/10">
-        <button
+    <div className="fixed inset-0 z-50 bg-pokemon-dark/90 flex flex-col justify-between select-none overflow-y-auto font-pokemon animate-fade-in">
+      <header className="p-4 flex items-center justify-between border-b-4 border-pokemon-ui-border">
+        <PokemonButton
           onClick={() => { onClose(); SoundSystem.playTap(); }}
-          className="w-10 h-10 rounded-full bg-slate-900 border border-white/15 flex items-center justify-center text-white active:scale-95 transition"
+          className="w-10 h-10 flex items-center justify-center p-0"
         >
           <ArrowLeft className="w-5 h-5" />
-        </button>
+        </PokemonButton>
 
-        <span className="font-extrabold text-sm text-slate-200 uppercase tracking-widest">
+        <span className="font-extrabold text-sm text-pokemon-ui-text uppercase tracking-widest">
           Pokémon Party ({party.length}/6)
         </span>
 
-        <button
+        <PokemonButton
           onClick={() => { setShowAppraisal(!showAppraisal); SoundSystem.playTap(); }}
-          className="px-3 py-1.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-black"
+          className="px-3 py-1.5 text-xs font-black text-pokemon-yellow"
         >
           Appraisal
-        </button>
+        </PokemonButton>
       </header>
 
-      {/* Main 3D Pokémon Inspection Stage */}
       <div className="relative w-full h-72 flex items-center justify-center">
-        {/* Glow ambient background */}
         <div
           className="absolute w-64 h-64 rounded-full blur-3xl opacity-30 pointer-events-none"
           style={{ backgroundColor: primaryTheme.primaryColor }}
@@ -77,109 +78,98 @@ export const PokemonGoPartyModal: React.FC<PokemonGoPartyModalProps> = ({ onClos
           </group>
         </Canvas>
 
-        {/* Combat Power CP Arc */}
         <div className="absolute top-4 flex flex-col items-center">
-          <span className="text-xs font-bold text-slate-400">CP</span>
-          <span className="text-3xl font-black text-white tracking-tight">{cp}</span>
+          <span className="text-xs font-bold text-pokemon-ui-muted">CP</span>
+          <span className="text-3xl font-black text-pokemon-ui-text tracking-tight">{cp}</span>
         </div>
       </div>
 
-      {/* Pokémon Details & Action Deck */}
-      <div className="bg-slate-900/95 border-t border-white/15 rounded-t-3xl p-6 flex flex-col gap-4 shadow-2xl">
-        {/* Pokémon Identity & Typings */}
+      <div className="pokemon-card border-t-4 border-pokemon-ui-border rounded-t-3xl p-6 flex flex-col gap-4">
         <div className="flex flex-col items-center text-center">
-          <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-1">
+          <h2 className="text-2xl font-black text-pokemon-ui-text uppercase tracking-tight mb-1">
             {activePokemon.name}
           </h2>
           <div className="flex items-center gap-2">
-            <span className={`px-3 py-0.5 rounded-full text-xs font-black ${primaryTheme.badgeGradient} ${primaryTheme.textColor} border ${primaryTheme.borderColor}`}>
-              {species.primaryType}
-            </span>
-            {species.secondaryType && (
-              <span className="px-3 py-0.5 rounded-full text-xs font-black bg-slate-800 text-slate-300 border border-white/10">
-                {species.secondaryType}
-              </span>
-            )}
-            <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-emerald-400 border border-white/10">
+            <TypeBadge type={species.primaryType} />
+            {species.secondaryType && <TypeBadge type={species.secondaryType} />}
+            <span className="px-3 py-0.5 rounded text-xs font-bold pokemon-card text-pokemon-green">
               Lv. {activePokemon.level}
             </span>
           </div>
         </div>
 
-        {/* Physical Stats: Weight & Height */}
-        <div className="grid grid-cols-3 gap-2 bg-slate-950/60 p-3 rounded-2xl border border-white/5 text-center">
+        <div className="grid grid-cols-3 gap-2 pokemon-card p-3 text-center">
           <div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase">Weight</div>
-            <div className="text-xs font-black text-slate-200">{species.weightKg} kg</div>
+            <div className="text-[10px] font-bold text-pokemon-ui-muted uppercase">Weight</div>
+            <div className="text-xs font-black text-pokemon-ui-text">{species.weightKg} kg</div>
           </div>
           <div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase">HP</div>
-            <div className="text-xs font-black text-emerald-400">{activePokemon.currentHp}/{activePokemon.calculatedStats.hp}</div>
+            <div className="text-[10px] font-bold text-pokemon-ui-muted uppercase">HP</div>
+            <div className="text-xs font-black text-pokemon-green">{activePokemon.currentHp}/{activePokemon.calculatedStats.hp}</div>
           </div>
           <div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase">Height</div>
-            <div className="text-xs font-black text-slate-200">{species.heightMeters} m</div>
+            <div className="text-[10px] font-bold text-pokemon-ui-muted uppercase">Height</div>
+            <div className="text-xs font-black text-pokemon-ui-text">{species.heightMeters} m</div>
           </div>
         </div>
 
-        {/* 3-Star IV Appraisal Drawer */}
         {showAppraisal && (
-          <div className="bg-slate-950/80 p-3.5 rounded-2xl border border-amber-400/30 space-y-2 animate-in slide-in-from-top-2">
-            <div className="text-xs font-black text-amber-300 uppercase tracking-wide">3-Star IV Appraisal</div>
+          <div className="pokemon-card p-3.5 border-4 border-pokemon-yellow space-y-2 animate-slide-up">
+            <div className="text-xs font-black text-pokemon-yellow uppercase tracking-wide">3-Star IV Appraisal</div>
             <div className="space-y-1.5 text-xs font-bold">
-              <div className="flex justify-between text-slate-300">
+              <div className="flex justify-between text-pokemon-ui-text">
                 <span>Attack</span>
-                <span className="text-amber-400">14 / 15</span>
+                <span className="text-pokemon-yellow">14 / 15</span>
               </div>
-              <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
-                <div className="h-full bg-amber-400 rounded-full w-[93%]" />
+              <div className="w-full h-2 rounded-full bg-pokemon-ui-card overflow-hidden">
+                <div className="h-full bg-pokemon-yellow rounded-full w-[93%]" />
               </div>
 
-              <div className="flex justify-between text-slate-300">
+              <div className="flex justify-between text-pokemon-ui-text">
                 <span>Defense</span>
-                <span className="text-amber-400">13 / 15</span>
+                <span className="text-pokemon-yellow">13 / 15</span>
               </div>
-              <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
-                <div className="h-full bg-amber-400 rounded-full w-[86%]" />
+              <div className="w-full h-2 rounded-full bg-pokemon-ui-card overflow-hidden">
+                <div className="h-full bg-pokemon-yellow rounded-full w-[86%]" />
               </div>
 
-              <div className="flex justify-between text-slate-300">
+              <div className="flex justify-between text-pokemon-ui-text">
                 <span>HP Stamina</span>
-                <span className="text-amber-400">15 / 15</span>
+                <span className="text-pokemon-yellow">15 / 15</span>
               </div>
-              <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
-                <div className="h-full bg-amber-400 rounded-full w-full" />
+              <div className="w-full h-2 rounded-full bg-pokemon-ui-card overflow-hidden">
+                <div className="h-full bg-pokemon-yellow rounded-full w-full" />
               </div>
             </div>
           </div>
         )}
 
-        {/* Power Up & Evolve Action Buttons */}
         <div className="grid grid-cols-2 gap-3">
-          <button
+          <PokemonButton
+            variant="success"
             onClick={() => SoundSystem.playTap()}
-            className="py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 transition uppercase"
+            className="py-3 text-xs flex items-center justify-center gap-2"
           >
             <Sparkles className="w-4 h-4" />
             <span>Power Up</span>
-          </button>
+          </PokemonButton>
 
-          <button
+          <PokemonButton
             onClick={() => SoundSystem.playTap()}
-            className="py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-black text-xs tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition uppercase"
+            className="py-3 text-xs flex items-center justify-center gap-2"
+            style={{ background: 'linear-gradient(180deg, #FFDE00 0%, #FFA500 100%)', borderColor: '#FFEE00' }}
           >
             <Zap className="w-4 h-4" />
             <span>Evolve</span>
-          </button>
+          </PokemonButton>
         </div>
 
-        {/* Quick Party Carousel Selector */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2">
           {party.map((p, idx) => (
             <button
               key={`party-${idx}`}
               onClick={() => { setSelectedIndex(idx); SoundSystem.playTap(); }}
-              className={`flex-shrink-0 p-2.5 rounded-2xl border flex flex-col items-center gap-1 min-w-[72px] transition ${idx === selectedIndex ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-lg' : 'bg-slate-950/60 border-white/10 text-slate-400'}`}
+              className={`flex-shrink-0 p-2.5 rounded-2xl border-4 flex flex-col items-center gap-1 min-w-[72px] transition ${idx === selectedIndex ? 'bg-pokemon-yellow/20 border-pokemon-yellow text-pokemon-yellow' : 'pokemon-card text-pokemon-ui-muted'}`}
             >
               <span className="text-xs font-black uppercase truncate">{p.name}</span>
               <span className="text-[10px] font-bold">Lv. {p.level}</span>
