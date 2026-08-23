@@ -1,8 +1,9 @@
 /**
- * Pokémon Game Engine — Core Main Entry
+ * Pokémon Game Engine — Core Main Entry & Canonical Asset Viewer
  * 
  * Exposes and executes the core engine systems:
- * - BattleEngine & Turn Resolver
+ * - Real Canonical Pokémon Official Artwork & HOME 3D Renders
+ * - BattleEngine & Deterministic Turn Simulator
  * - DamageCalculator & 18x18 Type Matrix
  * - StatCalculator & Canonical Growth Rates
  * - Canonical Species Database & Movesets
@@ -15,11 +16,13 @@ import { POKEMON_MOVES } from './data/pokemon/moves';
 import { calculateDamage } from './battle/DamageCalculator';
 import { createRuntimePokemon } from './battle/RuntimePokemon';
 import { TYPE_CHART, getTypeEffectiveness } from './data/pokemon/types';
+import { getPokemonArtwork, getPokemonHome3D, getPokemonIcon } from './data/pokemon/images';
 import { PokemonType } from './types/pokemon';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'species' | 'battle' | 'matrix' | 'save'>('species');
   const [selectedSpeciesId, setSelectedSpeciesId] = useState<string>('pikachu');
+  const [imageMode, setImageMode] = useState<'artwork' | 'home3d'>('artwork');
 
   const species = POKEMON_SPECIES_DATABASE[selectedSpeciesId] || POKEMON_SPECIES_LIST[0];
 
@@ -60,7 +63,7 @@ export const App: React.FC = () => {
       <header className="border-b border-slate-800 pb-4 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-emerald-400">POKÉMON CORE ENGINE</h1>
-          <p className="text-xs text-slate-400">Pure Canonical Engine & Data Architecture (v3.0.0)</p>
+          <p className="text-xs text-slate-400">Canonical Engine & Real Pokémon Asset Architecture (v3.0.0)</p>
         </div>
         <div className="flex gap-2">
           {(['species', 'battle', 'matrix', 'save'] as const).map((tab) => (
@@ -83,7 +86,7 @@ export const App: React.FC = () => {
       {activeTab === 'species' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Species List */}
-          <div className="bg-slate-900 border border-slate-800 rounded p-4 max-h-[70vh] overflow-y-auto space-y-1">
+          <div className="bg-slate-900 border border-slate-800 rounded p-4 max-h-[75vh] overflow-y-auto space-y-1">
             <h2 className="text-xs font-bold text-slate-400 uppercase mb-3">Database ({POKEMON_SPECIES_LIST.length} Species)</h2>
             {POKEMON_SPECIES_LIST.map((s) => (
               <button
@@ -95,21 +98,29 @@ export const App: React.FC = () => {
                     : 'text-slate-300 hover:bg-slate-800'
                 }`}
               >
-                <span>#{String(s.nationalDexNumber).padStart(3, '0')} {s.name}</span>
+                <div className="flex items-center gap-2">
+                  <img
+                    src={getPokemonIcon(s.id)}
+                    alt={s.name}
+                    className="w-7 h-7 object-contain"
+                    onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                  />
+                  <span>#{String(s.nationalDexNumber).padStart(3, '0')} {s.name}</span>
+                </div>
                 <span className="text-[10px] text-slate-500">{s.primaryType}</span>
               </button>
             ))}
           </div>
 
           {/* Species Details */}
-          <div className="md:col-span-2 bg-slate-900 border border-slate-800 rounded p-6 space-y-4">
+          <div className="md:col-span-2 bg-slate-900 border border-slate-800 rounded p-6 space-y-5">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div>
                 <span className="text-xs text-slate-500">#{String(species.nationalDexNumber).padStart(3, '0')}</span>
                 <h2 className="text-2xl font-bold text-white">{species.name}</h2>
                 <p className="text-xs text-slate-400 italic">{species.speciesCategory}</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <span className="px-2.5 py-1 rounded bg-slate-800 text-xs font-bold text-emerald-400 border border-slate-700">
                   {species.primaryType}
                 </span>
@@ -119,6 +130,32 @@ export const App: React.FC = () => {
                   </span>
                 )}
               </div>
+            </div>
+
+            {/* Official Image / HOME 3D Render Presentation */}
+            <div className="bg-slate-950 p-6 rounded-xl border border-slate-800 flex flex-col items-center justify-center relative min-h-[260px]">
+              {/* Image Switcher Toggle */}
+              <div className="absolute top-3 right-3 flex gap-1.5 bg-slate-900 p-1 rounded-lg border border-slate-800">
+                <button
+                  onClick={() => setImageMode('artwork')}
+                  className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase transition ${imageMode === 'artwork' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Official Artwork
+                </button>
+                <button
+                  onClick={() => setImageMode('home3d')}
+                  className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase transition ${imageMode === 'home3d' ? 'bg-cyan-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
+                >
+                  HOME 3D Render
+                </button>
+              </div>
+
+              {/* Real Pokemon Image */}
+              <img
+                src={imageMode === 'artwork' ? getPokemonArtwork(species.id) : getPokemonHome3D(species.id)}
+                alt={species.name}
+                className="w-52 h-52 object-contain drop-shadow-2xl transition-transform hover:scale-105 duration-300"
+              />
             </div>
 
             {/* Base Stats */}
