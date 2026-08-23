@@ -3,7 +3,8 @@ import { useGameStore } from './state/useGameStore';
 import { LoadingScreen } from './components/screens/LoadingScreen';
 import { MainMenu } from './components/screens/MainMenu';
 import { GameScreen } from './components/screens/GameScreen';
-import { BattleScreen } from './components/battle/BattleScreen';
+import { PokemonUniteBattleScreen } from './components/battle/PokemonUniteBattleScreen';
+import { PokemonGoCaptureScreen } from './components/capture/PokemonGoCaptureScreen';
 import { createRuntimePokemon } from './battle/RuntimePokemon';
 import { getPokemonById } from './data/pokemon';
 
@@ -14,7 +15,7 @@ export const App: React.FC = () => {
   const dismissEncounter = useGameStore((state) => state.dismissEncounter);
   const triggerResetWorld = useGameStore((state) => state.triggerResetWorld);
 
-  const handleBattleEnd = (result: 'VICTORY' | 'DEFEAT' | 'CAPTURED' | 'ESCAPED') => {
+  const handleEndMode = (result: 'VICTORY' | 'DEFEAT' | 'CAPTURED' | 'ESCAPED') => {
     dismissEncounter();
     setScreen('PLAYING');
     if (result === 'VICTORY' || result === 'CAPTURED') {
@@ -22,9 +23,13 @@ export const App: React.FC = () => {
     }
   };
 
-  const wildPokemonInstance = encounter
+  const currentSpecies = encounter
+    ? (encounter.pokemonSpecies || getPokemonById(encounter.pokemon.speciesId))
+    : null;
+
+  const wildPokemonInstance = (encounter && currentSpecies)
     ? createRuntimePokemon(
-        encounter.pokemonSpecies || getPokemonById(encounter.pokemon.speciesId)!,
+        currentSpecies,
         encounter.pokemon.level || 5,
         true,
         encounter.pokemon.instanceId
@@ -36,10 +41,18 @@ export const App: React.FC = () => {
       {screen === 'LOADING' && <LoadingScreen />}
       {screen === 'MENU' && <MainMenu />}
       {screen === 'PLAYING' && <GameScreen />}
+      {screen === 'CAPTURE' && currentSpecies && (
+        <PokemonGoCaptureScreen
+          species={currentSpecies}
+          level={encounter?.pokemon.level || 5}
+          onEscape={() => handleEndMode('ESCAPED')}
+          onCaptured={() => handleEndMode('CAPTURED')}
+        />
+      )}
       {screen === 'BATTLE' && wildPokemonInstance && (
-        <BattleScreen
+        <PokemonUniteBattleScreen
           wildPokemonInstance={wildPokemonInstance}
-          onBattleEnd={handleBattleEnd}
+          onBattleEnd={handleEndMode}
         />
       )}
     </div>

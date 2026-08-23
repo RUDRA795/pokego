@@ -1,6 +1,6 @@
 import { ActivePokemon, PokemonSpeciesData } from './pokemon';
 
-export type GameScreenState = 'LOADING' | 'MENU' | 'PLAYING' | 'BATTLE';
+export type GameScreenState = 'LOADING' | 'MENU' | 'PLAYING' | 'BATTLE' | 'CAPTURE';
 
 export interface EncounterData {
   pokemon: ActivePokemon;
