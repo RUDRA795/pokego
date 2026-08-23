@@ -23,9 +23,9 @@ export const GameScreen: React.FC = () => {
       {/* Heads-Up Display */}
       <GameHUD />
 
-      {/* Virtual Mobile Joystick (Bottom-Right or Bottom-Center for thumb comfort) */}
+      {/* Virtual Mobile Joystick (Bottom-Left for dual-touch thumb ergonomics) */}
       {showJoystick && !encounter && (
-        <div className="absolute bottom-6 right-6 z-20 pointer-events-auto">
+        <div className="absolute bottom-6 left-6 z-20 pointer-events-auto">
           <Joystick size={128} />
         </div>
       )}

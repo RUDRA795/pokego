@@ -1,19 +1,21 @@
 /**
- * Pokémon 3D RPG — 3D Battle Arena & Cinematic Combat Visuals
+ * Pokémon 3D RPG — In-World 3D Battle Arena & Cinematic Combat Presentation
  * 
  * Features:
- * - Dynamic framing camera calibrated to Pokémon physical heights.
- * - Type-specific battle attack particle VFX (Electric, Fire, Water, Grass, Ice, Ghost).
- * - Attack anticipation lunges, hit recoil vibration, and faint arcs.
- * - Arena spotlight rings and atmospheric ambient illumination.
+ * - Dynamic scale-aware camera calibrated to combatant heights using `SpeciesScaleSystem`.
+ * - Multi-joint articulated skeletal models (`PokemonSkeletonRig`) for both combatants.
+ * - In-world physical move VFX (`BattleVFX`) and Poké Ball capture sequences (`PokeBallCaptureVFX`).
+ * - Natural forest clearing setting with spotlight rings and environmental illumination.
  */
 
-import React, { useRef, useMemo } from 'react';
+import React, { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { RuntimePokemon } from '../../battle/types';
-import { PokemonRenderer } from '../pokemon/PokemonRenderer';
-import { getPokemonById } from '../../data/pokemon';
+import { PokemonSkeletonRig } from '../pokemon/PokemonSkeletonRig';
+import { SpeciesScaleSystem } from '../../systems/pokemon/SpeciesScaleSystem';
+import { BattleVFX } from './BattleVFX';
+import { PokeBallCaptureVFX } from './PokeBallCaptureVFX';
 
 interface BattleArena3DProps {
   playerPokemon: RuntimePokemon;
@@ -21,64 +23,9 @@ interface BattleArena3DProps {
   animatingActor: 'player' | 'opponent' | null;
   animatingAction: 'attack' | 'hit' | 'faint' | null;
   activeAttackType?: string | null;
+  isCapturing?: boolean;
+  onCaptureComplete?: (success: boolean) => void;
 }
-
-// Elemental VFX Particle Generator Component
-const ElementalAttackVFX: React.FC<{
-  type: string;
-  targetPos: [number, number, number];
-}> = ({ type, targetPos }) => {
-  const pointsRef = useRef<THREE.Points>(null);
-  const particleCount = 35;
-
-  const { positions, color } = useMemo(() => {
-    const pos = new Float32Array(particleCount * 3);
-    for (let i = 0; i < particleCount; i++) {
-      const idx = i * 3;
-      pos[idx] = targetPos[0] + (Math.random() - 0.5) * 1.5;
-      pos[idx + 1] = targetPos[1] + 0.4 + (Math.random() - 0.5) * 1.2;
-      pos[idx + 2] = targetPos[2] + (Math.random() - 0.5) * 1.5;
-    }
-
-    let c = '#facc15'; // Default Electric / Normal
-    if (type === 'Fire') c = '#ef4444';
-    else if (type === 'Water') c = '#38bdf8';
-    else if (type === 'Grass') c = '#22c55e';
-    else if (type === 'Ice') c = '#bae6fd';
-    else if (type === 'Ghost' || type === 'Psychic') c = '#c084fc';
-
-    return { positions: pos, color: c };
-  }, [type, targetPos]);
-
-  useFrame(({ clock }) => {
-    if (pointsRef.current) {
-      const t = clock.getElapsedTime();
-      pointsRef.current.rotation.y = t * 6;
-      const s = 1.0 + Math.sin(t * 12) * 0.3;
-      pointsRef.current.scale.set(s, s, s);
-    }
-  });
-
-  return (
-    <points ref={pointsRef}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={particleCount}
-          array={positions}
-          itemSize={3}
-        />
-      </bufferGeometry>
-      <pointsMaterial
-        color={color}
-        size={0.16}
-        transparent
-        opacity={0.85}
-        sizeAttenuation
-      />
-    </points>
-  );
-};
 
 const BattleScene: React.FC<BattleArena3DProps> = ({
   playerPokemon,
@@ -86,97 +33,108 @@ const BattleScene: React.FC<BattleArena3DProps> = ({
   animatingActor,
   animatingAction,
   activeAttackType,
+  isCapturing,
+  onCaptureComplete,
 }) => {
   const playerGroup = useRef<THREE.Group>(null);
   const opponentGroup = useRef<THREE.Group>(null);
 
-  const playerSpecies = getPokemonById(playerPokemon.speciesId);
-  const opponentSpecies = getPokemonById(opponentPokemon.speciesId);
-
-  // Animation controller
+  // Combatant dynamic animation loops
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
 
-    // 1. Player Battler Lunge / Hit Vibration
+    // Player Pokémon Lunge / Hit
     if (playerGroup.current) {
       if (animatingActor === 'player' && animatingAction === 'attack') {
-        playerGroup.current.position.set(-2.5 + Math.sin(t * 18) * 1.0, 0, 1.5 - Math.sin(t * 18) * 0.6);
+        playerGroup.current.position.set(-2.5 + Math.sin(t * 18) * 1.2, 0, 1.5 - Math.sin(t * 18) * 0.8);
       } else if (animatingActor === 'player' && animatingAction === 'hit') {
-        playerGroup.current.position.set(-2.5 + Math.sin(t * 40) * 0.2, 0, 1.5);
+        playerGroup.current.position.set(-2.5 + Math.sin(t * 40) * 0.25, 0, 1.5);
       } else {
         playerGroup.current.position.set(-2.5, 0, 1.5);
       }
     }
 
-    // 2. Opponent Battler Lunge / Hit Vibration
+    // Opponent Pokémon Lunge / Hit
     if (opponentGroup.current) {
       if (animatingActor === 'opponent' && animatingAction === 'attack') {
-        opponentGroup.current.position.set(2.5 - Math.sin(t * 18) * 1.0, 0, -1.5 + Math.sin(t * 18) * 0.6);
+        opponentGroup.current.position.set(2.5 - Math.sin(t * 18) * 1.2, 0, -1.5 + Math.sin(t * 18) * 0.8);
       } else if (animatingActor === 'opponent' && animatingAction === 'hit') {
-        opponentGroup.current.position.set(2.5 + Math.sin(t * 40) * 0.2, 0, -1.5);
+        opponentGroup.current.position.set(2.5 + Math.sin(t * 40) * 0.25, 0, -1.5);
       } else {
         opponentGroup.current.position.set(2.5, 0, -1.5);
       }
     }
   });
 
-  const showVFX = (animatingAction === 'hit' || animatingAction === 'attack');
-  const vfxTargetPos: [number, number, number] = animatingActor === 'player'
-    ? [2.5, 0, -1.5]
-    : [-2.5, 0, 1.5];
+  const showVFX = (animatingAction === 'attack' || animatingAction === 'hit');
+  const sourcePos: [number, number, number] = animatingActor === 'player' ? [-2.5, 0.6, 1.5] : [2.5, 0.6, -1.5];
+  const targetPos: [number, number, number] = animatingActor === 'player' ? [2.5, 0.6, -1.5] : [-2.5, 0.6, 1.5];
 
   return (
     <>
-      {/* Lighting */}
+      {/* Dynamic Lighting */}
       <ambientLight intensity={1.3} />
-      <directionalLight position={[10, 16, 10]} intensity={2.2} castShadow />
+      <directionalLight position={[12, 18, 10]} intensity={2.2} castShadow />
       <hemisphereLight groundColor="#1e293b" color="#93c5fd" intensity={0.9} />
 
-      {/* Arena Ground Platform */}
+      {/* In-World Battle Clearing Ground */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
-        <circleGeometry args={[14, 32]} />
-        <meshStandardMaterial color="#0f172a" roughness={0.75} />
+        <circleGeometry args={[15, 32]} />
+        <meshStandardMaterial color="#1b4332" roughness={0.88} />
       </mesh>
 
-      {/* Glowing Spotlights under Battlers */}
+      {/* Combatant Spotlight Circles */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-2.5, 0.01, 1.5]}>
-        <ringGeometry args={[1.1, 1.3, 32]} />
+        <ringGeometry args={[1.2, 1.45, 32]} />
         <meshBasicMaterial color="#38bdf8" opacity={0.65} transparent />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[2.5, 0.01, -1.5]}>
-        <ringGeometry args={[1.1, 1.3, 32]} />
-        <meshBasicMaterial color="#f43f5e" opacity={0.65} transparent />
+        <ringGeometry args={[1.2, 1.45, 32]} />
+        <meshBasicMaterial color="#ef4444" opacity={0.65} transparent />
       </mesh>
 
-      {/* Player Combatant */}
+      {/* Player Combatant Rig */}
       <group ref={playerGroup} position={[-2.5, 0, 1.5]} rotation={[0, Math.PI / 4, 0]}>
-        <PokemonRenderer speciesId={playerPokemon.speciesId} state="APPROACH" />
-      </group>
-
-      {/* Opponent Combatant */}
-      <group ref={opponentGroup} position={[2.5, 0, -1.5]} rotation={[0, -Math.PI * 0.75, 0]}>
-        <PokemonRenderer speciesId={opponentPokemon.speciesId} state="APPROACH" />
-      </group>
-
-      {/* Active Attack Elemental VFX */}
-      {showVFX && (
-        <ElementalAttackVFX
-          type={activeAttackType || 'Normal'}
-          targetPos={vfxTargetPos}
+        <PokemonSkeletonRig
+          speciesId={playerPokemon.speciesId}
+          animationState={animatingActor === 'player' && animatingAction === 'attack' ? 'ATTACK' : 'WANDER'}
         />
+      </group>
+
+      {/* Opponent Combatant Rig */}
+      {!isCapturing && (
+        <group ref={opponentGroup} position={[2.5, 0, -1.5]} rotation={[0, -Math.PI * 0.75, 0]}>
+          <PokemonSkeletonRig
+            speciesId={opponentPokemon.speciesId}
+            animationState={animatingActor === 'opponent' && animatingAction === 'attack' ? 'ATTACK' : 'WANDER'}
+          />
+        </group>
+      )}
+
+      {/* Elemental Move Attack VFX */}
+      {showVFX && (
+        <BattleVFX
+          moveType={activeAttackType || 'Normal'}
+          sourcePos={sourcePos}
+          targetPos={targetPos}
+        />
+      )}
+
+      {/* Poké Ball Capture Physical VFX */}
+      {isCapturing && (
+        <PokeBallCaptureVFX onCaptureComplete={onCaptureComplete} />
       )}
     </>
   );
 };
 
 export const BattleArena3D: React.FC<BattleArena3DProps> = (props) => {
-  const maxScale = Math.max(
-    getPokemonById(props.playerPokemon.speciesId)?.heightMeters || 1,
-    getPokemonById(props.opponentPokemon.speciesId)?.heightMeters || 1
-  );
+  const pScale = SpeciesScaleSystem.getScaleData(props.playerPokemon.speciesId);
+  const oScale = SpeciesScaleSystem.getScaleData(props.opponentPokemon.speciesId);
+  const maxFramingDist = Math.max(pScale.cameraFramingDistance, oScale.cameraFramingDistance);
 
-  const cameraZ = Math.max(8.5, 6.8 + maxScale * 0.55);
-  const cameraY = Math.max(4.2, 3.2 + maxScale * 0.35);
+  const cameraZ = Math.max(8.5, maxFramingDist * 1.1);
+  const cameraY = Math.max(4.5, 3.0 + maxFramingDist * 0.35);
 
   return (
     <div className="w-full h-full absolute inset-0">
@@ -185,7 +143,7 @@ export const BattleArena3D: React.FC<BattleArena3DProps> = (props) => {
           position: [-0.5, cameraY, cameraZ],
           fov: 42,
           near: 0.1,
-          far: 50,
+          far: 60,
         }}
         gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}
       >

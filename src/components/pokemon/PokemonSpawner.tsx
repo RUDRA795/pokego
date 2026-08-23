@@ -1,11 +1,10 @@
 /**
- * Pokémon 3D RPG — Ecological Pokémon Spawner Engine
+ * Pokémon 3D RPG — Ecological Wildlife Spawner Engine
  * 
- * Dynamically determines active overworld Pokémon by evaluating:
- * - Island Biome & Anchor points (Pond, Forest, Rocks, Grassland)
- * - Active Weather (SUNNY, CLOUDY, RAIN)
- * - Time of Day (DAY, NIGHT)
- * - Ecological suitability and rarity weighting
+ * Spawns living wildlife onto the Forest Valley terrain:
+ * - Positions grounded dynamically using `TerrainHeightmap.getHeight(x, z)`.
+ * - Sourced by ecological niche: stream water for Magikarp, forest floor for Bulbasaur/Caterpie,
+ *   open meadow for Pikachu, and airspace for Pidgey.
  */
 
 import React, { useMemo } from 'react';
@@ -14,7 +13,8 @@ import { getPokemonById, calculateSpawnCandidates } from '../../data/pokemon';
 import { ActivePokemon } from '../../types/pokemon';
 import { useGameStore } from '../../state/useGameStore';
 import { useWeatherStore } from '../../state/useWeatherStore';
-import { RoamingPokemon } from './RoamingPokemon';
+import { TerrainHeightmap } from '../../systems/world/TerrainHeightmap';
+import { LivingPokemonWildlife } from './LivingPokemonWildlife';
 
 export const PokemonSpawner: React.FC = () => {
   const resetTrigger = useGameStore((state) => state.resetWorldTrigger);
@@ -24,7 +24,7 @@ export const PokemonSpawner: React.FC = () => {
   // Generate dynamic active Pokémon instances based on environment state
   const activePokemonList: ActivePokemon[] = useMemo(() => {
     return WORLD_CONFIG.initialSpawns.map((anchor, index) => {
-      // Evaluate environmental context for this anchor position
+      // Ecological niche context
       const isNearWater = anchor.preferredHabitat === 'WatersEdge';
       const isNearTrees = anchor.preferredHabitat === 'Forest';
       const isNearRocks = anchor.preferredHabitat === 'Mountain' || anchor.preferredHabitat === 'Cave';
@@ -38,7 +38,6 @@ export const PokemonSpawner: React.FC = () => {
         isNearRocks,
       });
 
-      // Filter candidates matching the anchor's general ecological niche
       let nicheCandidates = candidates.filter((c) => {
         if (isNearWater) return c.species.canonicalHabitat === 'WatersEdge' || c.species.primaryType === 'Water';
         if (isNearTrees) return c.species.canonicalHabitat === 'Forest' || c.species.primaryType === 'Grass' || c.species.primaryType === 'Bug' || c.species.id === 'pikachu';
@@ -63,7 +62,10 @@ export const PokemonSpawner: React.FC = () => {
         }
       }
 
-      // Level scaling: Starters/Commons Lv. 3-6, Rare Lv. 5-8
+      const posX = anchor.position[0];
+      const posZ = anchor.position[2];
+      const posY = TerrainHeightmap.getHeight(posX, posZ);
+
       const baseLevel = selectedSpecies.encounterRarity === 'Rare' || selectedSpecies.encounterRarity === 'VeryRare'
         ? 5 + Math.floor(Math.random() * 4)
         : 3 + Math.floor(Math.random() * 3);
@@ -71,15 +73,15 @@ export const PokemonSpawner: React.FC = () => {
       return {
         instanceId: `pkmn-${selectedSpecies.id}-${index}-${resetTrigger}-${timeOfDay}`,
         speciesId: selectedSpecies.id,
-        position: [...anchor.position] as [number, number, number],
+        position: [posX, posY, posZ] as [number, number, number],
         targetPosition: [
-          anchor.position[0] + (Math.random() * 4 - 2),
-          0,
-          anchor.position[2] + (Math.random() * 4 - 2),
+          posX + (Math.random() * 6 - 3),
+          posY,
+          posZ + (Math.random() * 6 - 3),
         ],
         rotation: Math.random() * Math.PI * 2,
         state: 'IDLE',
-        stateTimer: 2 + Math.random() * 2,
+        stateTimer: 3 + Math.random() * 3,
         currentHp: selectedSpecies.baseStats.hp,
         maxHp: selectedSpecies.baseStats.hp,
         level: baseLevel,
@@ -91,7 +93,7 @@ export const PokemonSpawner: React.FC = () => {
   return (
     <group>
       {activePokemonList.map((pokemon) => (
-        <RoamingPokemon key={pokemon.instanceId} pokemon={pokemon} />
+        <LivingPokemonWildlife key={pokemon.instanceId} pokemon={pokemon} />
       ))}
     </group>
   );
