@@ -4,7 +4,7 @@
  * Coordinates:
  * - Real-world GPS $\to$ 3D Cartesian coordinates projection.
  * - Dynamic Lighting & Time of Day.
- * - Procedural Stylized World: Terrain, Roads, Buildings, Trees, Water.
+ * - Procedural Stylized World: Terrain, Roads, Buildings, Trees, Water, Landmarks.
  * - Weather particles (Rain, Wind, Sunny dust, Snow).
  * - Third-Person Orbit Camera & Trainer Avatar Locomotion.
  * - 3D Buddy Companion Following.
@@ -25,6 +25,7 @@ import { WorldRoads } from './environment/WorldRoads';
 import { WorldBuildings } from './environment/WorldBuildings';
 import { WorldVegetation } from './environment/WorldVegetation';
 import { WorldWater } from './environment/WorldWater';
+import { WorldLandmarks } from './environment/WorldLandmarks';
 import { WorldWeatherParticles } from './environment/WorldWeatherParticles';
 import { ThirdPersonCamera } from './player/ThirdPersonCamera';
 import { TrainerController, JoystickInput } from './player/TrainerController';
@@ -185,6 +186,7 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
         <ThirdPersonCamera
           targetPosition={trainerPos}
           isMoving={trainerIsMoving}
+          isSprinting={trainerIsMoving}
           orbitHorizontalAngle={orbitYaw}
           orbitVerticalAngle={orbitPitch}
           zoomDistance={zoomDist}
@@ -196,6 +198,7 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
         <WorldBuildings isNight={timeOfDay === 'NIGHT' || timeOfDay === 'DUSK'} />
         <WorldVegetation windIntensity={weatherCondition === 'WINDY' ? 2.5 : 1.0} />
         <WorldWater />
+        <WorldLandmarks />
 
         {/* 4. Weather Particle Effects */}
         <WorldWeatherParticles

@@ -32,6 +32,7 @@ import {
   Eye,
   Layers,
   Compass,
+  Radio,
 } from 'lucide-react';
 
 interface PoGoOverworldProps {
@@ -95,22 +96,21 @@ const VirtualTouchJoystick: React.FC<{
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
-      className="w-24 h-24 rounded-full bg-slate-900/80 backdrop-blur-xl border-2 border-white/20 shadow-2xl flex items-center justify-center touch-none select-none relative cursor-pointer"
+      className="w-24 h-24 rounded-full bg-slate-900/85 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.6)] flex items-center justify-center touch-none select-none relative cursor-pointer active:scale-95 transition-transform"
     >
-      {/* Direction indicators */}
-      <span className="absolute top-1.5 text-[8px] font-black text-slate-400">▲</span>
-      <span className="absolute bottom-1.5 text-[8px] font-black text-slate-400">▼</span>
-      <span className="absolute left-1.5 text-[8px] font-black text-slate-400">◀</span>
-      <span className="absolute right-1.5 text-[8px] font-black text-slate-400">▶</span>
+      <span className="absolute top-1.5 text-[8px] font-black text-emerald-400/70">▲</span>
+      <span className="absolute bottom-1.5 text-[8px] font-black text-emerald-400/70">▼</span>
+      <span className="absolute left-1.5 text-[8px] font-black text-emerald-400/70">◀</span>
+      <span className="absolute right-1.5 text-[8px] font-black text-emerald-400/70">▶</span>
 
       {/* Thumbstick Knob */}
       <div
-        className="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 border-2 border-white shadow-xl flex items-center justify-center transition-transform pointer-events-none"
+        className="w-11 h-11 rounded-full bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-400 border-2 border-white shadow-xl flex items-center justify-center transition-transform pointer-events-none"
         style={{
           transform: `translate(${knobPos.x}px, ${knobPos.y}px)`,
         }}
       >
-        <div className="w-3 h-3 rounded-full bg-white/80" />
+        <div className="w-3.5 h-3.5 rounded-full bg-white shadow-inner" />
       </div>
     </div>
   );
@@ -407,6 +407,8 @@ export const PoGoOverworldMap: React.FC<PoGoOverworldProps> = ({
     }
   };
 
+  const closestSpawn = spawns[0] || null;
+
   return (
     <div className="w-full h-full min-h-[640px] relative select-none overflow-hidden rounded-3xl border border-slate-800 shadow-2xl bg-slate-950">
       {/* "Oh?" Egg Hatching Cinematic */}
@@ -521,6 +523,17 @@ export const PoGoOverworldMap: React.FC<PoGoOverworldProps> = ({
       </div>
 
       <div className="absolute bottom-24 right-4 z-[500] flex flex-col items-end gap-2 pointer-events-auto">
+        {/* Contextual Quick Capture Button if Pokémon in range */}
+        {closestSpawn && (
+          <button
+            onClick={() => handleSelectPokemon(closestSpawn)}
+            className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs shadow-2xl flex items-center gap-1.5 border border-white/30 transition-transform active:scale-95 animate-pulse"
+          >
+            <span>🎯</span>
+            <span>Catch {closestSpawn.name} (CP {closestSpawn.cp})</span>
+          </button>
+        )}
+
         {/* 3D World / 2D Map Toggle */}
         <button
           onClick={() => setViewMode((prev) => (prev === '3D_WORLD' ? '2D_MAP' : '3D_WORLD'))}

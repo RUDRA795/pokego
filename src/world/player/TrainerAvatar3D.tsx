@@ -4,6 +4,7 @@
  * Features:
  * - Stylized anime proportions (Trainer cap, hair, jacket, backpack, sneakers).
  * - Dynamic team color accents (Mystic Blue / Valor Red / Instinct Yellow).
+ * - Step impact dust particles when moving and sprinting.
  * - Procedural skeletal animation rig:
  *   - Idle breathing and subtle postural shifts.
  *   - Walking stride cycle (alternating legs, swinging arms, vertical torso bob).
@@ -37,30 +38,65 @@ export const TrainerAvatar3D: React.FC<TrainerAvatarProps> = ({
   const leftLegRef = useRef<THREE.Group>(null);
   const rightLegRef = useRef<THREE.Group>(null);
   const shadowRef = useRef<THREE.Mesh>(null);
+  const dustParticlesRef = useRef<THREE.Points>(null);
 
   // Animation cycle phase tracker
   const animPhaseRef = useRef<number>(0);
   const currentHeadingRef = useRef<number>(headingAngle);
+
+  // Footstep dust particles positions
+  const dustPositions = React.useMemo(() => {
+    const pos = new Float32Array(18 * 3);
+    for (let i = 0; i < 18; i++) {
+      pos[i * 3] = (Math.random() - 0.5) * 0.4;
+      pos[i * 3 + 1] = Math.random() * 0.15;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 0.4 - 0.2;
+    }
+    return pos;
+  }, []);
 
   useFrame((_, delta) => {
     // Smooth heading interpolation (slerp-like)
     let diff = headingAngle - currentHeadingRef.current;
     while (diff < -Math.PI) diff += Math.PI * 2;
     while (diff > Math.PI) diff -= Math.PI * 2;
-    currentHeadingRef.current += diff * Math.min(1, delta * 12);
+    currentHeadingRef.current += diff * Math.min(1, delta * 14);
 
     if (rootGroupRef.current) {
       rootGroupRef.current.rotation.y = currentHeadingRef.current;
+      // Banking into sharp turns
+      rootGroupRef.current.rotation.z = -diff * 0.2;
     }
 
-    const speedMultiplier = isSprinting ? 12 : 7;
+    const speedMultiplier = isSprinting ? 12 : 7.2;
     const animDelta = isMoving ? delta * speedMultiplier : delta * 2;
     animPhaseRef.current += animDelta;
     const phase = animPhaseRef.current;
 
+    // Dust particles animation
+    if (dustParticlesRef.current) {
+      const mat = dustParticlesRef.current.material as THREE.PointsMaterial;
+      if (isMoving) {
+        mat.opacity = isSprinting ? 0.75 : 0.4;
+        const posAttr = dustParticlesRef.current.geometry.attributes.position as THREE.BufferAttribute;
+        const arr = posAttr.array as Float32Array;
+        for (let i = 0; i < arr.length / 3; i++) {
+          arr[i * 3 + 1] += delta * 0.4;
+          if (arr[i * 3 + 1] > 0.3) {
+            arr[i * 3 + 1] = 0.02;
+            arr[i * 3] = (Math.random() - 0.5) * 0.35;
+            arr[i * 3 + 2] = -0.2 - Math.random() * 0.2;
+          }
+        }
+        posAttr.needsUpdate = true;
+      } else {
+        mat.opacity = 0;
+      }
+    }
+
     if (isMoving) {
-      const strideAmp = isSprinting ? 0.75 : 0.45;
-      const armAmp = isSprinting ? 0.8 : 0.5;
+      const strideAmp = isSprinting ? 0.75 : 0.48;
+      const armAmp = isSprinting ? 0.8 : 0.52;
       const bobAmp = isSprinting ? 0.08 : 0.04;
 
       // 1. Legs Striding (Opposite phases)
@@ -84,11 +120,11 @@ export const TrainerAvatar3D: React.FC<TrainerAvatarProps> = ({
       // 3. Torso Bobbing & Forward Sprint Lean
       if (torsoRef.current) {
         torsoRef.current.position.y = 0.65 + Math.abs(Math.sin(phase * 2)) * bobAmp;
-        torsoRef.current.rotation.x = isSprinting ? 0.15 : 0.05;
+        torsoRef.current.rotation.x = isSprinting ? 0.16 : 0.06;
         torsoRef.current.rotation.y = Math.sin(phase) * 0.08;
       }
 
-      // 4. Head subtle counter-tilt
+      // 4. Head counter-tilt
       if (headRef.current) {
         headRef.current.rotation.y = -Math.sin(phase) * 0.05;
         headRef.current.rotation.x = isSprinting ? -0.1 : 0;
@@ -140,27 +176,31 @@ export const TrainerAvatar3D: React.FC<TrainerAvatarProps> = ({
         <meshBasicMaterial color="#050811" transparent opacity={0.55} />
       </mesh>
 
+      {/* Step Dust Particles */}
+      <points ref={dustParticlesRef}>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[dustPositions, 3]} />
+        </bufferGeometry>
+        <pointsMaterial size={0.12} color="#cbd5e1" transparent opacity={0} />
+      </points>
+
       {/* Trainer Skeleton Root */}
       <group ref={rootGroupRef}>
-        {/* LEGS (Anchored at Pelvis / Hip Joints) */}
+        {/* LEGS */}
         {/* Left Leg */}
         <group ref={leftLegRef} position={[-0.14, 0.5, 0]}>
-          {/* Thigh */}
           <mesh position={[0, -0.15, 0]} castShadow>
             <cylinderGeometry args={[0.07, 0.06, 0.3, 12]} />
             <meshStandardMaterial color="#1e293b" roughness={0.8} />
           </mesh>
-          {/* Shin */}
           <mesh position={[0, -0.36, 0.01]} castShadow>
             <cylinderGeometry args={[0.06, 0.05, 0.26, 12]} />
             <meshStandardMaterial color="#0f172a" roughness={0.8} />
           </mesh>
-          {/* Sneaker */}
           <mesh position={[0, -0.48, 0.05]} castShadow>
             <boxGeometry args={[0.11, 0.1, 0.22]} />
             <meshStandardMaterial color="#ffffff" roughness={0.4} />
           </mesh>
-          {/* Sneaker Sole/Stripe */}
           <mesh position={[0, -0.52, 0.05]}>
             <boxGeometry args={[0.115, 0.03, 0.23]} />
             <meshStandardMaterial color={teamColor} roughness={0.4} />
@@ -169,22 +209,18 @@ export const TrainerAvatar3D: React.FC<TrainerAvatarProps> = ({
 
         {/* Right Leg */}
         <group ref={rightLegRef} position={[0.14, 0.5, 0]}>
-          {/* Thigh */}
           <mesh position={[0, -0.15, 0]} castShadow>
             <cylinderGeometry args={[0.07, 0.06, 0.3, 12]} />
             <meshStandardMaterial color="#1e293b" roughness={0.8} />
           </mesh>
-          {/* Shin */}
           <mesh position={[0, -0.36, 0.01]} castShadow>
             <cylinderGeometry args={[0.06, 0.05, 0.26, 12]} />
             <meshStandardMaterial color="#0f172a" roughness={0.8} />
           </mesh>
-          {/* Sneaker */}
           <mesh position={[0, -0.48, 0.05]} castShadow>
             <boxGeometry args={[0.11, 0.1, 0.22]} />
             <meshStandardMaterial color="#ffffff" roughness={0.4} />
           </mesh>
-          {/* Sneaker Sole/Stripe */}
           <mesh position={[0, -0.52, 0.05]}>
             <boxGeometry args={[0.115, 0.03, 0.23]} />
             <meshStandardMaterial color={teamColor} roughness={0.4} />
@@ -193,19 +229,16 @@ export const TrainerAvatar3D: React.FC<TrainerAvatarProps> = ({
 
         {/* UPPER BODY & TORSO GROUP */}
         <group ref={torsoRef} position={[0, 0.65, 0]}>
-          {/* Hips / Shorts */}
           <mesh position={[0, -0.05, 0]} castShadow>
             <boxGeometry args={[0.34, 0.18, 0.22]} />
             <meshStandardMaterial color="#1e293b" roughness={0.7} />
           </mesh>
 
-          {/* Torso / Trainer Jacket */}
           <mesh position={[0, 0.15, 0]} castShadow>
             <boxGeometry args={[0.36, 0.32, 0.24]} />
             <meshStandardMaterial color={teamColor} roughness={0.5} />
           </mesh>
 
-          {/* Jacket Center Zipper & Collar */}
           <mesh position={[0, 0.15, 0.122]}>
             <planeGeometry args={[0.06, 0.32]} />
             <meshBasicMaterial color="#ffffff" />
@@ -215,56 +248,47 @@ export const TrainerAvatar3D: React.FC<TrainerAvatarProps> = ({
             <meshStandardMaterial color="#ffffff" />
           </mesh>
 
-          {/* Adventure Backpack on Back */}
+          {/* Backpack on Back */}
           <group position={[0, 0.16, -0.16]}>
             <mesh castShadow>
               <boxGeometry args={[0.26, 0.28, 0.14]} />
               <meshStandardMaterial color="#334155" roughness={0.6} />
             </mesh>
-            {/* Backpack Flap */}
             <mesh position={[0, 0.1, 0.02]}>
               <boxGeometry args={[0.24, 0.08, 0.12]} />
               <meshStandardMaterial color="#e2e8f0" />
             </mesh>
-            {/* Poké Ball Keyring on Bag */}
             <mesh position={[0.12, -0.05, 0.08]}>
               <sphereGeometry args={[0.04, 12, 12]} />
               <meshStandardMaterial color="#ef4444" roughness={0.3} />
             </mesh>
           </group>
 
-          {/* LEFT ARM */}
+          {/* ARMS */}
           <group ref={leftArmRef} position={[-0.24, 0.25, 0]}>
-            {/* Sleeve */}
             <mesh position={[0, -0.08, 0]} castShadow>
               <cylinderGeometry args={[0.06, 0.055, 0.18, 10]} />
               <meshStandardMaterial color={teamColor} roughness={0.5} />
             </mesh>
-            {/* Forearm & Hand */}
             <mesh position={[0, -0.24, 0]} castShadow>
               <cylinderGeometry args={[0.05, 0.045, 0.2, 10]} />
               <meshStandardMaterial color="#fed7aa" roughness={0.6} />
             </mesh>
-            {/* Fingerless Glove */}
             <mesh position={[0, -0.32, 0]}>
               <boxGeometry args={[0.08, 0.08, 0.08]} />
               <meshStandardMaterial color="#0f172a" roughness={0.6} />
             </mesh>
           </group>
 
-          {/* RIGHT ARM */}
           <group ref={rightArmRef} position={[0.24, 0.25, 0]}>
-            {/* Sleeve */}
             <mesh position={[0, -0.08, 0]} castShadow>
               <cylinderGeometry args={[0.06, 0.055, 0.18, 10]} />
               <meshStandardMaterial color={teamColor} roughness={0.5} />
             </mesh>
-            {/* Forearm & Hand */}
             <mesh position={[0, -0.24, 0]} castShadow>
               <cylinderGeometry args={[0.05, 0.045, 0.2, 10]} />
               <meshStandardMaterial color="#fed7aa" roughness={0.6} />
             </mesh>
-            {/* Fingerless Glove */}
             <mesh position={[0, -0.32, 0]}>
               <boxGeometry args={[0.08, 0.08, 0.08]} />
               <meshStandardMaterial color="#0f172a" roughness={0.6} />
@@ -273,17 +297,14 @@ export const TrainerAvatar3D: React.FC<TrainerAvatarProps> = ({
 
           {/* HEAD & CAP */}
           <group ref={headRef} position={[0, 0.44, 0]}>
-            {/* Neck */}
             <mesh position={[0, -0.08, 0]}>
               <cylinderGeometry args={[0.05, 0.06, 0.08, 10]} />
               <meshStandardMaterial color="#fed7aa" />
             </mesh>
-            {/* Head Face */}
             <mesh position={[0, 0.06, 0]} castShadow>
               <sphereGeometry args={[0.15, 16, 16]} />
               <meshStandardMaterial color="#ffedd5" roughness={0.5} />
             </mesh>
-            {/* Anime Eyes */}
             <mesh position={[-0.05, 0.06, 0.138]}>
               <planeGeometry args={[0.03, 0.04]} />
               <meshBasicMaterial color="#0f172a" />
@@ -293,30 +314,25 @@ export const TrainerAvatar3D: React.FC<TrainerAvatarProps> = ({
               <meshBasicMaterial color="#0f172a" />
             </mesh>
 
-            {/* Hair Tufts */}
             <mesh position={[0, 0.08, -0.04]} castShadow>
               <sphereGeometry args={[0.16, 12, 12]} />
               <meshStandardMaterial color="#334155" roughness={0.9} />
             </mesh>
 
-            {/* Trainer Cap (Red & White with Visor) */}
+            {/* Cap */}
             <group position={[0, 0.12, 0]}>
-              {/* Cap Dome */}
               <mesh castShadow>
                 <sphereGeometry args={[0.16, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
                 <meshStandardMaterial color="#ef4444" roughness={0.4} />
               </mesh>
-              {/* Front White Panel */}
               <mesh position={[0, 0.04, 0.12]} rotation={[0.2, 0, 0]}>
                 <circleGeometry args={[0.07, 16]} />
                 <meshBasicMaterial color="#ffffff" />
               </mesh>
-              {/* Poké Ball Icon on Cap */}
               <mesh position={[0, 0.04, 0.123]} rotation={[0.2, 0, 0]}>
                 <ringGeometry args={[0.02, 0.035, 16]} />
                 <meshBasicMaterial color="#ef4444" />
               </mesh>
-              {/* Cap Visor / Brim */}
               <mesh position={[0, 0.02, 0.14]} rotation={[0.25, 0, 0]} castShadow>
                 <boxGeometry args={[0.2, 0.02, 0.12]} />
                 <meshStandardMaterial color="#ffffff" roughness={0.4} />

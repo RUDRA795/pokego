@@ -5,16 +5,17 @@
  * - Smooth damped follow behind the trainer.
  * - Orbit rotation control via mouse and touch drag.
  * - Dynamic pitch, distance zoom clamping, and smooth elevation.
- * - Walk bobbing dampener to ensure smooth visual comfort.
+ * - Action-speed sprint dynamic FOV expansion.
  */
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
 interface ThirdPersonCameraProps {
   targetPosition: [number, number, number];
   isMoving: boolean;
+  isSprinting?: boolean;
   orbitHorizontalAngle: number;
   orbitVerticalAngle: number;
   zoomDistance: number;
@@ -23,14 +24,19 @@ interface ThirdPersonCameraProps {
 export const ThirdPersonCamera: React.FC<ThirdPersonCameraProps> = ({
   targetPosition,
   isMoving,
+  isSprinting = false,
   orbitHorizontalAngle,
   orbitVerticalAngle,
   zoomDistance,
 }) => {
   const { camera } = useThree();
 
-  const currentCamPos = useRef<THREE.Vector3>(new THREE.Vector3(targetPosition[0], targetPosition[1] + 4, targetPosition[2] + 7));
-  const currentLookAt = useRef<THREE.Vector3>(new THREE.Vector3(targetPosition[0], targetPosition[1] + 1.2, targetPosition[2]));
+  const currentCamPos = useRef<THREE.Vector3>(
+    new THREE.Vector3(targetPosition[0], targetPosition[1] + 4, targetPosition[2] + 7)
+  );
+  const currentLookAt = useRef<THREE.Vector3>(
+    new THREE.Vector3(targetPosition[0], targetPosition[1] + 1.2, targetPosition[2])
+  );
 
   useFrame((_, delta) => {
     // 1. Calculate desired camera position relative to target
@@ -61,7 +67,15 @@ export const ThirdPersonCamera: React.FC<ThirdPersonCameraProps> = ({
     currentCamPos.current.lerp(desiredCamPos, posLerpFactor);
     currentLookAt.current.lerp(desiredLookAt, lookLerpFactor);
 
-    // 3. Apply to Three.js camera
+    // 3. Dynamic Action Sprint FOV
+    const perspCam = camera as THREE.PerspectiveCamera;
+    if (perspCam.isPerspectiveCamera) {
+      const targetFov = isSprinting ? 56 : 50;
+      perspCam.fov = THREE.MathUtils.lerp(perspCam.fov, targetFov, delta * 5);
+      perspCam.updateProjectionMatrix();
+    }
+
+    // 4. Apply to Three.js camera
     camera.position.copy(currentCamPos.current);
     camera.lookAt(currentLookAt.current);
   });
